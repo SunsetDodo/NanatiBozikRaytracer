@@ -13,11 +13,14 @@ from surfaces.sphere import Sphere
 from ray import Ray, ray_cast
 from viewplane import Viewplane
 
+from scene import Scene
 
 def parse_scene_file(file_path):
     objects = []
     camera = None
     scene_settings = None
+    s = Scene()
+
     with open(file_path, 'r') as f:
         for line in f:
             line = line.strip()
@@ -28,23 +31,30 @@ def parse_scene_file(file_path):
             params = [float(p) for p in parts[1:]]
             if obj_type == "cam":
                 camera = Camera(params[:3], params[3:6], params[6:9], params[9], params[10])
+                s.camera = camera
             elif obj_type == "set":
                 scene_settings = SceneSettings(params[:3], params[3], params[4])
+                s.scene_settings = scene_settings
             elif obj_type == "mtl":
                 material = Material(params[:3], params[3:6], params[6:9], params[9], params[10])
                 objects.append(material)
+                s.materials.append(material)
             elif obj_type == "sph":
                 sphere = Sphere(params[:3], params[3], int(params[4]))
                 objects.append(sphere)
+                s.surfaces.append(sphere)
             elif obj_type == "pln":
                 plane = InfinitePlane(params[:3], params[3], int(params[4]))
                 objects.append(plane)
+                s.surfaces.append(plane)
             elif obj_type == "box":
                 cube = Cube(params[:3], params[3], int(params[4]))
                 objects.append(cube)
+                s.surfaces.append(cube)
             elif obj_type == "lgt":
                 light = Light(params[:3], params[3:6], params[6], params[7], params[8])
                 objects.append(light)
+                s.lights.append(light)
             else:
                 raise ValueError("Unknown object type: {}".format(obj_type))
     return camera, scene_settings, objects
