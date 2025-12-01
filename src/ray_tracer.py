@@ -10,6 +10,9 @@ from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
+from ray import Ray, ray_cast
+from viewplane import Viewplane
+
 
 def parse_scene_file(file_path):
     objects = []
@@ -64,11 +67,17 @@ def main():
 
     # Parse the scene file
     camera, scene_settings, objects = parse_scene_file(args.scene_file)
+    vp = Viewplane(camera)
+    image_array = np.zeros((500, 500, 3))
 
-    # TODO: Implement the ray tracer
+    # Calculate Viewplane
+    for x in args.width:
+        for y in args.height:
+            target = vp.get_pixel_center(x, y)
+            r = Ray(camera.position(), target, scene_settings.max_recursions)
+            image_array[x][y] = ray_cast(r, scene_settings, objects)
 
     # Dummy result
-    image_array = np.zeros((500, 500, 3))
 
     # Save the output image
     save_image(image_array)
