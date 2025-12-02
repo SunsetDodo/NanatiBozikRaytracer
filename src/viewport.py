@@ -1,7 +1,7 @@
 from src.math import Vector3
 from camera import Camera
 
-class Viewplane:
+class Viewport:
     def __init__(self, camera: Camera, distance: float):
         pass
 

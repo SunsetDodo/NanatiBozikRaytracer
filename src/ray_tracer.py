@@ -11,7 +11,7 @@ from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
 from ray import Ray, ray_cast
-from viewplane import Viewplane
+from viewport import Viewport
 
 from scene import Scene
 
@@ -71,18 +71,22 @@ def main():
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
-    parser.add_argument('--width', type=int, default=500, help='Image width')
+    parser.add_argument('--width', type=int, default=400, help='Image width')
     parser.add_argument('--height', type=int, default=500, help='Image height')
     args = parser.parse_args()
 
+    # TODO - maybe remove me
+    aspect_ratio = 16.0 / 9.0
+    args.height = max(int(args.width / aspect_ratio), 1)
+
     # Parse the scene file
     camera, scene_settings, objects = parse_scene_file(args.scene_file)
-    vp = Viewplane(camera)
-    image_array = np.zeros((500, 500, 3))
+    vp = Viewport(camera)
+    image_array = np.zeros((args.width, args.height, 3))
 
     # Calculate Viewplane
-    for x in args.width:
-        for y in args.height:
+    for x in range(args.width):
+        for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(camera.position(), target, scene_settings.max_recursions)
             image_array[x][y] = ray_cast(r, scene_settings, objects)
