@@ -20,8 +20,7 @@ class Ray:
 
 def find_hit(ray, closest: bool = False) -> Optional[RayHit]:
     closest_hit = None
-    scene = Scene()
-    for surface in scene.surfaces:
+    for surface in Scene().surfaces:
         ray_hit = surface.get_hit(ray)
         if ray_hit < closest_hit:
             if not closest:
@@ -40,13 +39,22 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
 
     # Handle Lights and Shadows
     for light in Scene().lights:
-        if find_hit(light.get_position() - closest_hit.point, False) is not None:
-            continue
+        reacable_samples = 0
+        for _ in range(Scene().settings.root_number_shadow_rays):
+            to_light = light.get_position - closest_hit.point
+            sample = light.sample_position(to_light, Scene().settings.SHADOW_RAY_RADIUS)
+            if find_hit(Ray(closest_hit.point, sample - closest_hit.point)) is not None:
+                reacable_samples += 1
+
+        if reacable_samples > 0:
+            color += (light.calculate_color(closest_hit.material) *
+                      (reacable_samples / Scene().settings.root_number_shadow_rays))
+
+    if not max_recursion_depth == 0:
         ...
+        # Handle Reflection
 
-    # Handle Reflection
-
-    # Handle Refraction
+        # Handle Refraction
 
     return color
 
