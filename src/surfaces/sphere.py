@@ -1,4 +1,4 @@
-from surface import Surface
+from .surface import Surface
 
 class Sphere(Surface):
     def __init__(self, position, radius, material_index):

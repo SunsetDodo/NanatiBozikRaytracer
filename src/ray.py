@@ -1,5 +1,5 @@
 from src.light import Light
-from src.math import Vector3
+from src.vector3 import Vector3
 from src.surfaces.surface import Surface
 
 from typing import List
@@ -12,7 +12,7 @@ class Ray:
         self.ttl = ttl
 
 
-def ray_cast(ray, surfaces: List[Surface], lights: List[Light]):
+def trace_ray(ray, surfaces: List[Surface], lights: List[Light]):
     closest_hit = None
     for surface in surfaces:
         ray_hit = surface.get_hit(ray)

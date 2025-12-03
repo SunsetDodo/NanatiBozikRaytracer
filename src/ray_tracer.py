@@ -1,6 +1,10 @@
 import argparse
 from PIL import Image
 import numpy as np
+import os
+import sys
+import datetime
+import logging
 
 from camera import Camera
 from light import Light
@@ -10,10 +14,26 @@ from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
 
-from ray import Ray, ray_cast
+from ray import Ray, trace_ray
 from viewport import Viewport
 
 from scene import Scene
+
+
+
+def setup_logger(log_level = logging.INFO):
+    os.makedirs("logs", exist_ok=True)
+    logfile = os.path.join("logs", f"{datetime.datetime.now().isoformat()}.log")
+    logging.basicConfig(
+        level=log_level,
+        format="[%(asctime)s][%(levelname)s][%(name)s] %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            logging.FileHandler(logfile, encoding="utf8")
+        ]
+    )
+
 
 def parse_scene_file(file_path):
     objects = []
@@ -72,12 +92,13 @@ def main():
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
     parser.add_argument('--width', type=int, default=400, help='Image width')
-    parser.add_argument('--height', type=int, default=500, help='Image height')
+    parser.add_argument('--height', type=int, default=600, help='Image height')
     args = parser.parse_args()
 
+    setup_logger(logging.DEBUG)
+
     # TODO - maybe remove me
-    aspect_ratio = 16.0 / 9.0
-    args.height = max(int(args.width / aspect_ratio), 1)
+    aspect_ratio = args.width / args.height
 
     # Parse the scene file
     camera, scene_settings, objects = parse_scene_file(args.scene_file)
@@ -88,8 +109,8 @@ def main():
     for x in range(args.width):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
-            r = Ray(camera.position(), target, scene_settings.max_recursions)
-            image_array[x][y] = ray_cast(r, scene_settings, objects)
+            r = Ray(camera.get_position(), target, scene_settings.max_recursions)
+            # image_array[x][y] = trace_ray(r, scene_settings, objects)
 
     # Dummy result
 

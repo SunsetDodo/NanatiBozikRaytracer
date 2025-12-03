@@ -1,4 +1,4 @@
-from surface import Surface
+from .surface import Surface
 
 class InfinitePlane(Surface):
     def __init__(self, normal, offset, material_index):

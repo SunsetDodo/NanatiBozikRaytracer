@@ -1,4 +1,4 @@
-from src.math import Vector3
+from src.vector3 import Vector3
 
 
 class Camera:
@@ -9,8 +9,8 @@ class Camera:
         self.screen_distance = screen_distance
         self.screen_width = screen_width
 
-    def position(self) -> Vector3:
+    def get_position(self) -> Vector3:
         return Vector3.from_array(self.position)
 
-    def look_at(self) -> Vector3:
+    def get_look_at(self) -> Vector3:
         return Vector3.from_array(self.look_at)

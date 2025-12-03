@@ -1,4 +1,4 @@
-from surface import Surface
+from .surface import Surface
 
 class Cube(Surface):
     def __init__(self, position, scale, material_index):

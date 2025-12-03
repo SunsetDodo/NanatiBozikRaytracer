@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 
 from surfaces.surface import Surface
-from src.math import Vector3
+from src.vector3 import Vector3
 from src.material import Material
 
 from typing import Optional
