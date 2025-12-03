@@ -91,8 +91,8 @@ def main():
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
-    parser.add_argument('--width', type=int, default=400, help='Image width')
-    parser.add_argument('--height', type=int, default=600, help='Image height')
+    parser.add_argument('--width', type=int, default=600, help='Image width')
+    parser.add_argument('--height', type=int, default=400, help='Image height')
     args = parser.parse_args()
     setup_logger(logging.DEBUG)
     logger = logging.getLogger("Raytracer").getChild("Main")
@@ -103,14 +103,16 @@ def main():
 
     # Parse the scene file
     camera, scene_settings, objects = parse_scene_file(args.scene_file)
-    vp = Viewport(camera)
-    image_array = np.zeros((args.width, args.height, 3))
+    image_array = np.zeros((args.height, args.width, 3))
+
+    vp = Viewport(camera, aspect_ratio)
+    origin = camera.get_position()
 
     # Calculate Viewplane
     for x in range(args.width):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
-            r = Ray(camera.get_position(), target, scene_settings.max_recursions)
+            r = Ray(origin, origin - target)
             # image_array[x][y] = trace_ray(r, scene_settings, objects)
 
     # Dummy result
