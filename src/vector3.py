@@ -3,6 +3,8 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List
 
+from math import acos
+
 class Vector3:
     x: float
     y: float
@@ -103,6 +105,14 @@ class Vector3:
 def dot(u: Vector3, v: Vector3):
     return sum([u[i] * v[i] for i in (0, 1, 2)])
 
+
+def angle(u: Vector3, v: Vector3):
+    if u.length_squared == 0 or v.length_squared == 0:
+        raise ValueError("Cannot compute angle with zero-length vector")
+
+    d = acos(dot(u.normalized, v.normalized))
+    d = max(-1.0, min(1.0, d))
+    return acos(d)
 
 def cross(u: Vector3, v: Vector3):
     return Vector3(
