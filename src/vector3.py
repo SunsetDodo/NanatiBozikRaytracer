@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cached_property
 from typing import List
 
 class Vector3:
@@ -8,14 +9,85 @@ class Vector3:
     z: float
 
     def __init__(self, x: float, y: float, z: float):
-        self.x = x
-        self.y = y
-        self.z = z
+        self._array = [x, y, z]
+        self._x = x
+        self._y = y
+        self._z = z
 
     def __getitem__(self, item):
         if isinstance(item, int) and 0 <= item <= 2:
-            return [self.x, self.y, self.z][item]
+            return self._array[item]
         raise ValueError("Can only get numbers between 0 and 2")
+
+    def __add__(self, other):
+        if not isinstance(other, Vector3):
+            raise ValueError("Can only add Vector3 to Vector3")
+        return Vector3.from_array([self._array[i] + other._array[i] for i in (0, 1, 2)])
+
+    def __sub__(self, other):
+        if not isinstance(other, Vector3):
+            raise ValueError("Can only add Vector3 to Vector3")
+        return Vector3.from_array([self._array[i] - other._array[i] for i in (0, 1, 2)])
+
+    def __mul__(self, other):
+        if not isinstance(other, (int, float)):
+            raise ValueError("Can only multiply Vector3 with numeric scalar")
+        return Vector3.from_array([val * other for val in self._array])
+
+    def __truediv__(self, other):
+        if not isinstance(other, (int, float)):
+            raise ValueError("Can only divide Vector3 by numeric scalar")
+        return self * (1 / other)
+
+    def __neg__(self):
+        return self * -1
+
+    def __repr__(self):
+        return f"Vec3({self.x},{self.y},{self.z})"
+
+    @cached_property
+    def normalized(self):
+        return self / self.length
+
+    @cached_property
+    def length_squared(self):
+        """Returns the distance from (0,0,0) squared"""
+        return self.x ** 2 + self.y ** 2 + self.z ** 2
+
+    @cached_property
+    def length(self):
+        return self.length_squared ** 0.5
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+        self._clear_cached_properties()
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+        self._clear_cached_properties()
+
+    @property
+    def z(self):
+        return self._y
+
+    @z.setter
+    def z(self, value):
+        self._z = value
+        self._clear_cached_properties()
+
+    def _clear_cached_properties(self):
+        for key in ("normalized", "length_squared", "length"):
+            self.__dict__.pop(key, None)
 
     @staticmethod
     def from_array(array: List[float]) -> Vector3:
@@ -26,3 +98,15 @@ class Vector3:
     @staticmethod
     def zero() -> Vector3:
         return Vector3(0, 0, 0)
+
+
+def dot(u: Vector3, v: Vector3):
+    return sum([u[i] * v[i] for i in (0, 1, 2)])
+
+
+def cross(u: Vector3, v: Vector3):
+    return Vector3(
+        u.y * v.z - u.z * v.y,
+        u.z * v.x - u.x * v.z,
+        u.x * v.y - u.y * v.x
+    )
