@@ -112,8 +112,8 @@ def main():
     for x in range(args.width):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
-            r = Ray(origin, origin - target)
-            # image_array[x][y] = trace_ray(r, scene_settings, objects)
+            r = Ray(origin, target - origin)
+            image_array[x][y] = trace_ray(r, scene_settings.max_recursions)
 
     # Dummy result
 
