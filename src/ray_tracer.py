@@ -94,11 +94,12 @@ def main():
     parser.add_argument('--width', type=int, default=400, help='Image width')
     parser.add_argument('--height', type=int, default=600, help='Image height')
     args = parser.parse_args()
-
     setup_logger(logging.DEBUG)
+    logger = logging.getLogger("Raytracer").getChild("Main")
 
     # TODO - maybe remove me
     aspect_ratio = args.width / args.height
+    logger.info("Starting Raytracing, width: %d height: %d (Aspect Ratio is: %.2f)", args.width, args.height, aspect_ratio)
 
     # Parse the scene file
     camera, scene_settings, objects = parse_scene_file(args.scene_file)

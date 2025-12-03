@@ -114,6 +114,7 @@ def angle(u: Vector3, v: Vector3):
     d = max(-1.0, min(1.0, d))
     return acos(d)
 
+
 def cross(u: Vector3, v: Vector3):
     return Vector3(
         u.y * v.z - u.z * v.y,
