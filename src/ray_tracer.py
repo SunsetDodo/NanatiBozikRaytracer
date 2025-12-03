@@ -105,7 +105,7 @@ def main():
     camera, scene_settings, objects = parse_scene_file(args.scene_file)
     image_array = np.zeros((args.height, args.width, 3))
 
-    vp = Viewport(camera, aspect_ratio)
+    vp = Viewport(camera, args.width, args.height)
     origin = camera.get_position()
 
     # Calculate Viewplane

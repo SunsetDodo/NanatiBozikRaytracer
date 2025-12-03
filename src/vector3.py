@@ -39,6 +39,8 @@ class Vector3:
     def __truediv__(self, other):
         if not isinstance(other, (int, float)):
             raise ValueError("Can only divide Vector3 by numeric scalar")
+        if other == 0:
+            raise ZeroDivisionError("Can't deivide Vector3 by zero")
         return self * (1 / other)
 
     def __neg__(self):
@@ -80,7 +82,7 @@ class Vector3:
 
     @property
     def z(self):
-        return self._y
+        return self._z
 
     @z.setter
     def z(self, value):
