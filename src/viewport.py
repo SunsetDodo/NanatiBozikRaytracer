@@ -1,4 +1,5 @@
 import logging
+import random
 
 from src.vector3 import Vector3, cross
 from camera import Camera
@@ -44,4 +45,7 @@ class Viewport:
         self.start_pixel = self.top_left + (self.delta_u + self.delta_v) / 2
 
     def get_pixel_center(self, x, y) -> Vector3:
-        return Vector3(0, 0, 0)
+        return self.start_pixel + self.delta_u * x + self.delta_v * y
+
+    def get_random_location_in_pixel(self, x, y):
+        return self.top_left + self.delta_u * (x + random.random()) + self.delta_v * (y + random.random())
