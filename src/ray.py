@@ -39,16 +39,14 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
 
     # Handle Lights and Shadows
     for light in Scene().lights:
-        reacable_samples = 0
-        for _ in range(Scene().settings.root_number_shadow_rays):
-            to_light = light.get_position - closest_hit.point
-            sample = light.sample_position(to_light, Scene().settings.SHADOW_RAY_RADIUS)
+        reachable_samples = 0
+        for sample in light.samples(light.get_position - closest_hit.point):
             if find_hit(Ray(closest_hit.point, sample - closest_hit.point)) is not None:
-                reacable_samples += 1
+                reachable_samples += 1
 
-        if reacable_samples > 0:
-            color += (light.calculate_color(closest_hit.material) *
-                      (reacable_samples / Scene().settings.root_number_shadow_rays))
+        if reachable_samples > 0:
+            color += (closest_hit.material.calculate_light(light) *
+                      (reachable_samples / Scene.settings.root_number_shadow_rays ** 2))
 
     if not max_recursion_depth == 0:
         ...
