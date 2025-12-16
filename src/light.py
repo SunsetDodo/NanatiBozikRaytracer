@@ -17,7 +17,7 @@ def _build_orthogonal_basis(direction: Vector3, radius: float):
     tangent = tangent.normalized
     bitangent = cross(direction, tangent).normalized
 
-    return tangent, bitangent
+    return tangent * radius, bitangent * radius
 
 
 class Light:

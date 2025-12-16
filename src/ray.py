@@ -18,43 +18,57 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def find_hit(ray, closest: bool = False) -> Optional[RayHit]:
-    closest_hit = None
+def find_hit(ray, max_list_depth: int) -> List[RayHit]:
+    hits = []
     for surface in Scene().surfaces:
         ray_hit = surface.get_hit(ray)
-        if ray_hit < closest_hit:
-            if not closest:
-                return ray_hit
-            closest_hit = ray_hit
+        if ray_hit is not None:
+            hits.append(ray_hit)
 
-    return closest_hit
+    # TODO - this can be implemented more efficiently by only appending the max_list_depth closest hits
+    return sorted(hits)[:max_list_depth]
 
 
 def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
-    closest_hit = find_hit(ray, True)
-    if not closest_hit:
+    if max_recursion_depth == -1:
         return Scene().background_color
+
+    hit_list = find_hit(ray, max_recursion_depth)
+    if not hit_list:
+        return Scene().background_color
+
+    # TODO - implement bonus
+    closest_hit = hit_list[0]
 
     color = Vector3.zero()
 
     # Handle Lights and Shadows
     for light in Scene().lights:
+        total_samples = Scene.settings.root_number_shadow_rays ** 2
         reachable_samples = 0
+
         for sample in light.samples(light.get_position - closest_hit.point):
-            if find_hit(Ray(closest_hit.point, sample - closest_hit.point)) is not None:
+            origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
+            shadow_ray = Ray(origin, sample - origin)
+            if find_hit(shadow_ray) is not None:
                 reachable_samples += 1
 
-        if reachable_samples > 0:
-            color += (closest_hit.material.calculate_light(light) *
-                      (reachable_samples / Scene.settings.root_number_shadow_rays ** 2))
+        visibility = reachable_samples / total_samples
+        shadow = 1.0 - light.shadow_intensity * (1.0 - visibility)
 
-    if not max_recursion_depth == 0:
-        ...
-        # Handle Reflection
+        color_contrib = closest_hit.material.calculate_light(
+            light=light,
+            normal_dir=closest_hit.normal,
+            view_dir=ray.direction.normalize(),
+            light_dir=light.get_position - closest_hit.point
+        ) * shadow
+        color += color_contrib
 
-        # Handle Refraction
+    if closest_hit.material.transparency > 0:
+        pass
 
-    return color
+
+    return color.clamp_01()
 
 
 
