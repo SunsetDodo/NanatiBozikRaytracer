@@ -37,15 +37,13 @@ class Cube(Surface):
         hit_point = ray.origin + (ray.direction * t)
 
         normal = Vector3.zero()
-        p_rel = hit_point - self.position  # Position relative to center
+        diff = hit_point - self.position
 
-        bias = 1 + EPSILON
-
-        if abs(p_rel.x / half_size) > bias:
-            normal.x = -1 if p_rel.x < 0 else 1
-        elif abs(p_rel.y / half_size) > bias:
-            normal.y = -1 if p_rel.y < 0 else 1
+        if abs(diff.x / half_size) - 1 > EPSILON:
+            normal.x = -1 if diff.x < 0 else 1
+        elif abs(diff.y / half_size) - 1 > EPSILON:
+            normal.y = -1 if diff.y < 0 else 1
         else:
-            normal.z = -1 if p_rel.z < 0 else 1
+            normal.z = -1 if diff.z < 0 else 1
 
         return RayHit(self, hit_point, normal, self.material_index, t)
