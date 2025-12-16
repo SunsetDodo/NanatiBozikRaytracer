@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from src.light import Light
 from src.vector3 import Vector3
 

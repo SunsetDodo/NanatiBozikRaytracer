@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import random
 from functools import cached_property
-from math import pi, cos, sin
 from typing import Generator
 
-from src.material import Material
 from src.scene import Scene
 from src.vector3 import Vector3, cross
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .surface import Surface
 
 class Sphere(Surface):
