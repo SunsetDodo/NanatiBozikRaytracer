@@ -5,6 +5,8 @@ from typing import List
 
 from math import acos
 
+from consts import EPSILON
+
 class Vector3:
     x: float
     y: float
@@ -62,6 +64,13 @@ class Vector3:
     def length(self):
         return self.length_squared ** 0.5
 
+    @cached_property
+    def inverse(self):
+        x = 1.0 / self.x if abs(self.x) > EPSILON else float('inf')
+        y = 1.0 / self.y if abs(self.y) > EPSILON else float('inf')
+        z = 1.0 / self.z if abs(self.z) > EPSILON else float('inf')
+        return Vector3(x, y, z)
+
     @property
     def x(self):
         return self._x
@@ -104,6 +113,13 @@ class Vector3:
         return Vector3(0, 0, 0)
 
 
+    def max_component(self) -> float:
+        return max(self.x, self.y, self.z)
+
+    def min_component(self) -> float:
+        return min(self.x, self.y, self.z)
+
+
 def dot(u: Vector3, v: Vector3):
     return sum([u[i] * v[i] for i in (0, 1, 2)])
 
@@ -123,3 +139,11 @@ def cross(u: Vector3, v: Vector3):
         u.z * v.x - u.x * v.z,
         u.x * v.y - u.y * v.x
     )
+
+
+def element_min(v1: Vector3, v2: Vector3) -> Vector3:
+    return Vector3(min(v1.x, v2.x), min(v1.y, v2.y), min(v1.z, v2.z))
+
+
+def element_max(v1: Vector3, v2: Vector3) -> Vector3:
+    return Vector3(max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z))
