@@ -93,6 +93,14 @@ class Vector3:
     def z(self):
         return self._z
 
+    def clamp_01(self):
+        return Vector3(
+            max(min(self.x, 1), 0),
+            max(min(self.y, 1), 0),
+            max(min(self.z, 1), 0)
+        )
+
+
     @z.setter
     def z(self, value):
         self._z = value
@@ -120,11 +128,11 @@ class Vector3:
         return min(self.x, self.y, self.z)
 
 
-def dot(u: Vector3, v: Vector3):
+def dot(u: Vector3, v: Vector3) -> float:
     return sum([u[i] * v[i] for i in (0, 1, 2)])
 
 
-def angle(u: Vector3, v: Vector3):
+def angle(u: Vector3, v: Vector3) -> float:
     if u.length_squared == 0 or v.length_squared == 0:
         raise ValueError("Cannot compute angle with zero-length vector")
 
@@ -133,7 +141,7 @@ def angle(u: Vector3, v: Vector3):
     return acos(d)
 
 
-def cross(u: Vector3, v: Vector3):
+def cross(u: Vector3, v: Vector3) -> Vector3:
     return Vector3(
         u.y * v.z - u.z * v.y,
         u.z * v.x - u.x * v.z,
@@ -147,3 +155,10 @@ def element_min(v1: Vector3, v2: Vector3) -> Vector3:
 
 def element_max(v1: Vector3, v2: Vector3) -> Vector3:
     return Vector3(max(v1.x, v2.x), max(v1.y, v2.y), max(v1.z, v2.z))
+
+def vec3_convolution(u: Vector3, v: Vector3) -> Vector3:
+    return Vector3(
+        u[0] * v[0],
+        u[1] * v[1],
+        u[2] * v[2]
+    )

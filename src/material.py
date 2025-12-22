@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from src.light import Light
-from src.vector3 import Vector3
+from src.vector3 import Vector3, dot, vec3_convolution
 
 
 class Material:
@@ -12,5 +12,26 @@ class Material:
         self.shininess = shininess
         self.transparency = transparency
 
-    def calculate_light(self, light: Light) -> Vector3:
-        return Vector3.zero()
+    def calculate_light(self, light: Light,
+                        normal_dir: Vector3,
+                        light_dir: Vector3,
+                        view_dir: Vector3,
+                        reflect_dir: Vector3 = None,
+                        estimate: bool = False
+                        ) -> Vector3:
+
+        if estimate:
+            highlight_dir = light_dir + view_dir
+            v_dot_r = dot(highlight_dir, normal_dir)
+        else:
+            if reflect_dir is None:
+                reflect_dir = (normal_dir * dot(light_dir * 2, normal_dir)) - light_dir
+            v_dot_r = dot(view_dir, reflect_dir)
+
+        n_dot_l = dot(normal_dir, light_dir)
+
+        diffuse = vec3_convolution(light.color, self.diffuse_color) * n_dot_l
+        specular = vec3_convolution(light.color, self.specular_color) * light.specular_intensity * pow(v_dot_r, self.shininess)
+
+        return diffuse + specular
+

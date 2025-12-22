@@ -25,6 +25,9 @@ class Scene(metaclass=Singleton):
     materials: List[Material]
     lights: List[Light]
 
+    # Hardcoded constants
+    EPSILON = 1e-9
+
     def __init__(self):
         self.settings = None
         self.camera = None
