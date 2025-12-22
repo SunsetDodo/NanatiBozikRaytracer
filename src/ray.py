@@ -6,6 +6,7 @@ from src.vector3 import Vector3
 from src.surfaces.surface import Surface
 from scene import Scene
 
+import heapq
 from typing import List, Optional
 
 
@@ -19,14 +20,24 @@ class Ray:
 
 
 def find_hit(ray, max_list_depth: int) -> List[RayHit]:
-    hits = []
+    hits_heap = []
+
     for surface in Scene().surfaces:
+        # TODO - consider sending max t (after we fill max_list_depth) to get_hit and stop if we reached t.
         ray_hit = surface.get_hit(ray)
         if ray_hit is not None:
-            hits.append(ray_hit)
+            entry = (-ray_hit.t, id(ray_hit), ray_hit)
+            if len(hits_heap) < max_list_depth:
+                heapq.heappush(hits_heap, entry)
+            else:
+                furthest_dist_in_heap = -hits_heap[0][0]
+                if ray_hit.t < furthest_dist_in_heap:
+                    heapq.heapreplace(hits_heap, entry)
 
-    # TODO - this can be implemented more efficiently by only appending the max_list_depth closest hits
-    return sorted(hits)[:max_list_depth]
+    result_hits = [item[2] for item in hits_heap]
+    result_hits.sort(key=lambda h: h.t)
+
+    return result_hits
 
 
 def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
