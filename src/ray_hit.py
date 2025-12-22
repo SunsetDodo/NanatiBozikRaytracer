@@ -4,9 +4,10 @@ import sys
 
 from dataclasses import dataclass
 
+from scene import Scene
 from surfaces.surface import Surface
-from src.vector3 import Vector3
-from src.material import Material
+from vector3 import Vector3
+from material import Material
 
 from typing import Optional
 
@@ -15,8 +16,11 @@ class RayHit:
     surface: Surface
     point: Vector3
     normal: Vector3
-    material: Material
+    material: Material or int
     distance: float
+
+    def __post_init__(self):
+        self.material = Scene().materials[self.material - 1]
 
     def __gt__(self, other):
         if isinstance(other, RayHit):

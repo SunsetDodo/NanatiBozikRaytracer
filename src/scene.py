@@ -2,28 +2,23 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List, Optional
 
-from src.camera import Camera
-from src.material import Material
-from src.scene_settings import SceneSettings
-from src.surfaces.surface import Surface
-from src.light import Light
 from src.vector3 import Vector3
 
 
-class Singleton(type):
-    _instances = {}
+class SceneSingleton(type):
+    instance = None
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+        if cls.instance is None:
+            cls.instance = super().__call__(*args, **kwargs)
+        return cls.instance
 
 
-class Scene(metaclass=Singleton):
-    settings: Optional[SceneSettings]
-    camera: Optional[Camera]
-    surfaces: List[Surface]
-    materials: List[Material]
-    lights: List[Light]
+class Scene(metaclass=SceneSingleton):
+    settings: Optional['SceneSettings']
+    camera: Optional['Camera']
+    surfaces: List['Surface']
+    materials: List['Material']
+    lights: List['Light']
 
     # Hardcoded constants
     EPSILON = 1e-9
@@ -35,6 +30,5 @@ class Scene(metaclass=Singleton):
         self.materials = []
         self.lights = []
 
-    @cached_property
     def background_color(self):
         return Vector3.from_array(self.settings.background_color)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import List
+from typing import List, Tuple
 
 from math import acos
 
@@ -13,7 +13,7 @@ class Vector3:
     z: float
 
     def __init__(self, x: float, y: float, z: float):
-        self._array = [x, y, z]
+        self._array = (x, y, z)
         self._x = x
         self._y = y
         self._z = z
@@ -24,14 +24,10 @@ class Vector3:
         raise ValueError("Can only get numbers between 0 and 2")
 
     def __add__(self, other):
-        if not isinstance(other, Vector3):
-            raise ValueError("Can only add Vector3 to Vector3")
-        return Vector3.from_array([self._array[i] + other._array[i] for i in (0, 1, 2)])
+        return Vector3.from_array([self[i] + other[i] for i in (0, 1, 2)])
 
     def __sub__(self, other):
-        if not isinstance(other, Vector3):
-            raise ValueError("Can only add Vector3 to Vector3")
-        return Vector3.from_array([self._array[i] - other._array[i] for i in (0, 1, 2)])
+        return Vector3.from_array([self[i] - other[i] for i in (0, 1, 2)])
 
     def __mul__(self, other):
         if not isinstance(other, (int, float)):
@@ -71,6 +67,9 @@ class Vector3:
         z = 1.0 / self.z if abs(self.z) > EPSILON else float('inf')
         return Vector3(x, y, z)
 
+    def to_tuple(self) -> Tuple[float, float, float]:
+        return self._array
+
     @property
     def x(self):
         return self._x
@@ -95,9 +94,9 @@ class Vector3:
 
     def clamp_01(self):
         return Vector3(
-            max(min(self.x, 1), 0),
-            max(min(self.y, 1), 0),
-            max(min(self.z, 1), 0)
+            max(min(self.x, 1.0), 0.0),
+            max(min(self.y, 1.0), 0.0),
+            max(min(self.z, 1.0), 0.0)
         )
 
 

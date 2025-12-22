@@ -5,6 +5,7 @@ import os
 import sys
 import datetime
 import logging
+import tqdm
 
 from camera import Camera
 from light import Light
@@ -54,7 +55,7 @@ def parse_scene_file(file_path):
                 s.camera = camera
             elif obj_type == "set":
                 scene_settings = SceneSettings(params[:3], params[3], params[4])
-                s.scene_settings = scene_settings
+                s.settings = scene_settings
             elif obj_type == "mtl":
                 material = Material(params[:3], params[3:6], params[6:9], params[9], params[10])
                 objects.append(material)
@@ -108,12 +109,12 @@ def main():
     vp = Viewport(camera, args.width, args.height)
     origin = camera.get_position()
 
-    # Calculate Viewplane
     for x in range(args.width):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            image_array[x][y] = trace_ray(r, scene_settings.max_recursions)
+            color = trace_ray(r, scene_settings.max_recursions)
+            image_array[y][x] = trace_ray(r, scene_settings.max_recursions)
 
     # Dummy result
 

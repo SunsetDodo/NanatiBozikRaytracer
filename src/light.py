@@ -4,8 +4,8 @@ import random
 from functools import cached_property
 from typing import Generator
 
-from src.scene import Scene
-from src.vector3 import Vector3, cross
+from scene import Scene
+from vector3 import Vector3, cross
 
 
 def _build_orthogonal_basis(direction: Vector3, radius: float):
@@ -41,7 +41,7 @@ class Light:
         delta_t = t / n
         delta_b = b / n
 
-        for x in range(n):
-            for y in range(n):
-                yield top_left + (x + random.random()) * delta_t + (y + random.random()) * delta_b
+        for x in range(int(n)):
+            for y in range(int(n)):
+                yield top_left + delta_t * (x + random.random()) + delta_b * (y + random.random())
 

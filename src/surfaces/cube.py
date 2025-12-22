@@ -4,7 +4,7 @@ from src.consts import EPSILON
 from src.ray import Ray
 from src.ray_hit import RayHit
 from src.vector3 import Vector3, element_min, element_max
-from surface import Surface
+from .surface import Surface
 
 
 class Cube(Surface):
