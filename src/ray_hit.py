@@ -3,19 +3,18 @@ from __future__ import annotations
 import sys
 
 from dataclasses import dataclass
+import numpy as np
 
 from scene import Scene
 from surfaces.surface import Surface
-from vector3 import Vector3
 from material import Material
 
-from typing import Optional
 
 @dataclass
 class RayHit:
     surface: Surface
-    point: Vector3
-    normal: Vector3
+    point: np.array
+    normal: np.array
     material: Material or int
     distance: float
 

@@ -1,9 +1,5 @@
 from __future__ import annotations
-from functools import cached_property
 from typing import List, Optional
-
-from vector3 import Vector3
-
 
 class SceneSingleton(type):
     instance = None
@@ -31,4 +27,4 @@ class Scene(metaclass=SceneSingleton):
         self.lights = []
 
     def background_color(self):
-        return Vector3.from_array(self.settings.background_color)
+        return self.settings.background_color_np

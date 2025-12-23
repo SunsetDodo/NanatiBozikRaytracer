@@ -14,7 +14,6 @@ from scene_settings import SceneSettings
 from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
-from vector3 import Vector3
 from ray import Ray, trace_ray
 from viewport import Viewport
 
@@ -106,13 +105,13 @@ def main():
     image_array = np.zeros((args.height, args.width, 3))
 
     vp = Viewport(camera, args.width, args.height)
-    origin = camera.get_position()
+    origin = camera.position
 
     for x in tqdm.tqdm(range(args.width), desc="Rendering"):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            color = trace_ray(r, scene_settings.max_recursions).clamp_01().to_tuple()
+            color = np.clip(trace_ray(r, scene_settings.max_recursions), 0.0, 1.0)
             image_array[y][x] = color
 
     save_image(image_array, args.output_image)

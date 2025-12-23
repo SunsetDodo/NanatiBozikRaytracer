@@ -2,58 +2,63 @@ from __future__ import annotations
 
 from functools import cached_property
 from typing import Generator
-import numpy as np
 
 from scene import Scene
-from vector3 import Vector3, cross
 
+import numpy as np
 
-def _build_orthogonal_basis(direction: Vector3, radius: float):
-    if abs(direction.x) > abs(direction.z):
-        tangent = Vector3(-direction.y, direction.x, 0)
+def _build_orthogonal_basis(direction: np.ndarray, radius: float):
+    dx, dy, dz = direction
+
+    if abs(dx) > abs(dz):
+        tangent = np.array([-dy, dx, 0.0], dtype=direction.dtype)
     else:
-        tangent = Vector3(0, -direction.z, direction.y)
+        tangent = np.array([0.0, -dz, dy], dtype=direction.dtype)
 
-    tangent = tangent.normalized
-    bitangent = cross(direction, tangent).normalized
+    # normalize tangent
+    t_len = np.linalg.norm(tangent)
+    if t_len != 0.0:
+        tangent /= t_len
+
+    # bitangent = normalize(cross(direction, tangent))
+    bitangent = np.cross(direction, tangent)
+    b_len = np.linalg.norm(bitangent)
+    if b_len != 0.0:
+        bitangent /= b_len
 
     return tangent * radius, bitangent * radius
 
 
+
 class Light:
     def __init__(self, position, color, specular_intensity, shadow_intensity, radius):
-        self.position = Vector3.from_array(position)
-        self.color = Vector3.from_array(color)
+        self.position = np.array(position)
+        self.color = np.array(color)
         self.specular_intensity = specular_intensity
         self.shadow_intensity = shadow_intensity
         self.radius = radius
 
-    @cached_property
-    def get_position(self) -> Vector3:
-        return self.position
+    import numpy as np
 
-    def samples(self, direction: Vector3) -> Generator[Vector3]:
-        t, b = _build_orthogonal_basis(direction.normalized, self.radius)
-        top_left = self.position - (t + b) / 2
+    def samples(self, direction: np.ndarray) -> np.ndarray:
+        dir_norm = direction / np.linalg.norm(direction)
+
+        t, b = _build_orthogonal_basis(dir_norm, self.radius)
+        top_left = self.position - (t + b) * 0.5
 
         n = int(Scene().settings.root_number_shadow_rays)
 
-        tl_data = top_left._data
-        t_data = t._data / n
-        b_data = b._data / n
+        t_step = t / n
+        b_step = b / n
 
-        x_indices, y_indices = np.meshgrid(np.arange(n), np.arange(n))
+        idx = np.arange(n, dtype=np.float64)
+        x_idx, y_idx = np.meshgrid(idx, idx, indexing="xy")
 
-        x_indices = x_indices.flatten()
-        y_indices = y_indices.flatten()
+        x_jitters = np.random.random((n, n))
+        y_jitters = np.random.random((n, n))
 
-        jitter_x = np.random.random(n * n)
-        jitter_y = np.random.random(n * n)
+        x_offsets = (x_idx + x_jitters)[..., None] * t_step  # (n, n, 3)
+        y_offsets = (y_idx + y_jitters)[..., None] * b_step  # (n, n, 3)
 
-        total_x = (x_indices + jitter_x)[:, np.newaxis] * t_data
-        total_y = (y_indices + jitter_y)[:, np.newaxis] * b_data
-
-        all_points = tl_data + total_x + total_y
-
-        for point in all_points:
-            yield Vector3(point[0], point[1], point[2])
+        all_points = (top_left + x_offsets + y_offsets).reshape(-1, 3)
+        return all_points

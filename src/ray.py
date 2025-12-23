@@ -1,9 +1,7 @@
-from packaging.version import VersionComparisonMethod
+import numpy as np
 
-from light import Light
 from ray_hit import RayHit
-from vector3 import Vector3
-from surfaces.surface import Surface
+from utils import normalize
 from scene import Scene
 
 import heapq
@@ -11,7 +9,7 @@ from typing import List, Optional
 
 
 class Ray:
-    def __init__(self, origin: Vector3, direction: Vector3):
+    def __init__(self, origin: np.array, direction: np.array):
         self.origin = origin
         self.direction = direction
 
@@ -19,54 +17,62 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def find_hit(ray, max_list_depth: int) -> List[RayHit]:
-    hits_heap = []
+def find_hit(ray, max_list_depth: int) -> list[RayHit]:
+    surfaces = Scene().surfaces      # ideally pass this in instead of calling Scene()
+    hits: list[RayHit] = []
 
-    for surface in Scene().surfaces:
-        # TODO - consider sending max t (after we fill max_list_depth) to get_hit and stop if we reached t.
+    for surface in surfaces:
         ray_hit = surface.get_hit(ray)
-        if ray_hit is not None:
-            entry = (-ray_hit.distance, id(ray_hit), ray_hit)
-            if len(hits_heap) < max_list_depth:
-                heapq.heappush(hits_heap, entry)
-            else:
-                furthest_dist_in_heap = -hits_heap[0][0]
-                if ray_hit.distance < furthest_dist_in_heap:
-                    heapq.heapreplace(hits_heap, entry)
+        if ray_hit is None:
+            continue
 
-    result_hits = [item[2] for item in hits_heap]
-    result_hits.sort(key=lambda h: h.distance)
+        d = ray_hit.distance
 
-    return result_hits
+        if len(hits) < max_list_depth:
+            hits.append(ray_hit)
+        else:
+            worst_idx = 0
+            worst_dist = hits[0].distance
+            for i in range(1, len(hits)):
+                dist_i = hits[i].distance
+                if dist_i > worst_dist:
+                    worst_dist = dist_i
+                    worst_idx = i
+
+            if d < worst_dist:
+                hits[worst_idx] = ray_hit
+
+    hits.sort(key=lambda h: h.distance)
+    return hits
 
 
-def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
+
+def trace_ray(ray, max_recursion_depth: int = 10) -> np.array:
     if max_recursion_depth == -1:
-        return Vector3.from_array(Scene().settings.background_color)
+        return Scene().settings.background_color_np
 
     hit_list = find_hit(ray, max_recursion_depth)
     if not hit_list:
-        return Vector3.from_array(Scene().settings.background_color)
+        return Scene().settings.background_color_np
 
     closest_hit = hit_list[0]
 
-    color = Vector3.zero()
+    color = np.zeros(3, dtype=float)
 
     for light in Scene().lights:
         total_samples = Scene().settings.root_number_shadow_rays ** 2
         reachable_samples = 0
 
-        light_vector = light.get_position - closest_hit.point
-        light_dir = light_vector.normalized
+        light_vector = light.position - closest_hit.point
+        light_dir = normalize(light_vector)
 
         for sample in light.samples(
                 light_vector):
             origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
 
-            sample_vector = sample - origin
-            shadow_ray = Ray(origin, sample_vector)
+            shadow_ray = Ray(origin, sample - origin)
 
-            if not is_occluded(shadow_ray, 1.0):
+            if not is_occluded(shadow_ray, max_recursion_depth):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
@@ -75,7 +81,7 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
         color_contrib = closest_hit.material.calculate_light(
             light=light,
             normal_dir=closest_hit.normal,
-            view_dir=(ray.direction * -1).normalized,
+            view_dir=normalize(ray.direction * -1),
             light_dir=light_dir
         ) * shadow
         color += color_contrib
@@ -83,8 +89,7 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
     if closest_hit.material.transparency > 0:
         pass
 
-    return color.clamp_01()
-
+    return np.clip(color, 0.0, 1.0)
 
 def is_occluded(ray, max_distance: float) -> bool:
     for surface in Scene().surfaces:

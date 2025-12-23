@@ -1,10 +1,11 @@
 import logging
 import random
 
-from vector3 import Vector3, cross
+import numpy as np
 from camera import Camera
+from utils import normalize
 
-from math import atan, pi, tan
+from math import atan, pi
 
 class Viewport:
     def __init__(self, camera: Camera, image_width: int, image_height: int):
@@ -30,9 +31,9 @@ class Viewport:
         )
 
         # Calculating right and down vectors of the viewport
-        forward = (camera.get_look_at() - camera.get_position()).normalized
-        right = -cross(forward, Vector3.from_array(camera.up_vector)).normalized
-        down = -cross(forward, right).normalized  # we cross again in case configured up and look at are not perpendicular
+        forward = normalize(camera.look_at - camera.position)
+        right = -normalize(np.cross(forward, camera.up_vector))
+        down = -normalize(np.cross(forward, right))  # we cross again in case configured up and look at are not perpendicular
 
         self.u = right * self.width
         self.v = down * self.height
@@ -40,12 +41,12 @@ class Viewport:
         self.delta_u = self.u / image_width
         self.delta_v = self.v / image_height
 
-        center = camera.get_position() + forward * camera.screen_distance
+        center = camera.position + forward * camera.screen_distance
         self.top_left = center - self.u / 2 - self.v / 2
         self.start_pixel = self.top_left + (self.delta_u + self.delta_v) / 2
 
-    def get_pixel_center(self, x, y) -> Vector3:
+    def get_pixel_center(self, x, y) -> np.array:
         return self.start_pixel + self.delta_u * x + self.delta_v * y
 
-    def get_random_location_in_pixel(self, x, y):
+    def get_random_location_in_pixel(self, x, y) -> np.array:
         return self.top_left + self.delta_u * (x + random.random()) + self.delta_v * (y + random.random())

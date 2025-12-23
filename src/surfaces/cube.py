@@ -1,49 +1,57 @@
 from typing import Optional
 
-from consts import EPSILON
-from ray import Ray
-from ray_hit import RayHit
-from vector3 import Vector3, element_min, element_max
+import numpy as np
+
+from src.consts import EPSILON
+from src.ray import Ray
+from src.ray_hit import RayHit
 from .surface import Surface
 
 
 class Cube(Surface):
     def __init__(self, position, scale, material_index):
-        self.position = Vector3.from_array(position)
+        self.position = np.array(position)
         self.scale = scale
         self.material_index = material_index
 
-    def get_hit(self, ray: 'Ray') -> Optional['RayHit']:
-        inv_dir = ray.direction.inverse()
+    def get_hit_np(self, ray: "Ray") -> Optional["RayHit"]:
+        origin = ray.origin
+        direction = ray.direction
 
-        half_size = self.scale * 0.5
-        offset = Vector3(half_size, half_size, half_size)
+        # inverse direction (handle zeros via inf)
+        with np.errstate(divide="ignore"):
+            inv_dir = 1.0 / direction
+
+        half_size = 0.5 * self.scale
+        offset = np.array([half_size, half_size, half_size], dtype=origin.dtype)
+
         min_pt = self.position - offset
         max_pt = self.position + offset
 
-        t1 = (min_pt - ray.origin) * inv_dir
-        t2 = (max_pt - ray.origin) * inv_dir
+        # slab intersections
+        t1 = (min_pt - origin) * inv_dir
+        t2 = (max_pt - origin) * inv_dir
 
-        t_min_vec = element_min(t1, t2)
-        t_max_vec = element_max(t1, t2)
+        t_min_vec = np.minimum(t1, t2)
+        t_max_vec = np.maximum(t1, t2)
 
-        t_enter = t_min_vec.max_component()
-        t_exit = t_max_vec.min_component()
+        t_enter = t_min_vec.max()
+        t_exit = t_max_vec.min()
 
         if t_exit < t_enter or t_exit < EPSILON:
             return None
 
         t = t_enter if t_enter > EPSILON else t_exit
-        hit_point = ray.origin + (ray.direction * t)
+        hit_point = origin + direction * t
 
-        normal = Vector3.zero()
+        # compute normal from dominant axis of |diff|
         diff = hit_point - self.position
+        # scale to box size so faces are near ±1
+        scaled = diff / half_size
+        abs_scaled = np.abs(scaled)
 
-        if abs(diff.x / half_size) - 1 > EPSILON:
-            normal.x = -1 if diff.x < 0 else 1
-        elif abs(diff.y / half_size) - 1 > EPSILON:
-            normal.y = -1 if diff.y < 0 else 1
-        else:
-            normal.z = -1 if diff.z < 0 else 1
+        axis = int(abs_scaled.argmax())
+        normal = np.zeros(3, dtype=origin.dtype)
+        normal[axis] = -1.0 if diff[axis] < 0.0 else 1.0
 
         return RayHit(self, hit_point, normal, self.material_index, t)

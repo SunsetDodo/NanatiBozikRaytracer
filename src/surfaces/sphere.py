@@ -4,30 +4,24 @@ from typing import Optional
 from src.consts import EPSILON
 from src.ray import Ray
 from src.ray_hit import RayHit
-from src.vector3 import Vector3
 from .surface import Surface
-import numpy as np  # Make sure numpy is imported
+import numpy as np
+
+from src.utils import normalize
 
 
 class Sphere(Surface):
     def __init__(self, position, radius, material_index):
-        self.position = Vector3.from_array(position)
+        self.position =np.array(position)
         self.radius = radius
         self.material_index = material_index
 
     def get_hit(self, ray: 'Ray') -> Optional['RayHit']:
+        look_at = self.position - ray.origin
 
-        O = ray.origin._data
-        D = ray.direction._data
-        P = self.position._data
-
-        L = P - O
-
-        a = D @ D
-
-        b = -2.0 * (D @ L)
-
-        c = (L @ L) - (self.radius ** 2)
+        a = ray.direction @ ray.direction
+        b = -2.0 * (ray.direction @ look_at)
+        c = (look_at @ look_at) - (self.radius ** 2)
 
         discriminant = (b ** 2) - (4 * a * c)
 
@@ -46,6 +40,6 @@ class Sphere(Surface):
             return None
 
         hit_point = ray.at(t)
-        normal = (hit_point - self.position).normalized
+        normal = normalize(hit_point - self.position)
 
         return RayHit(self, hit_point, normal, self.material_index, t)
