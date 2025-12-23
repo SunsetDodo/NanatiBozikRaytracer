@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from src.light import Light
-from src.vector3 import Vector3, dot, vec3_convolution
+from light import Light
+from vector3 import Vector3, dot, vec3_convolution
 
 
 class Material:
     def __init__(self, diffuse_color, specular_color, reflection_color, shininess, transparency):
-        self.diffuse_color = diffuse_color
-        self.specular_color = specular_color
-        self.reflection_color = reflection_color
+        self.diffuse_color = Vector3.from_array(diffuse_color)
+        self.specular_color = Vector3.from_array(specular_color)
+        self.reflection_color = Vector3.from_array(reflection_color)
+
         self.shininess = shininess
         self.transparency = transparency
 
@@ -31,7 +32,7 @@ class Material:
         n_dot_l = dot(normal_dir, light_dir)
 
         diffuse = vec3_convolution(light.color, self.diffuse_color) * n_dot_l
-        specular = vec3_convolution(light.color, self.specular_color) * light.specular_intensity * pow(v_dot_r, self.shininess)
+        specular = vec3_convolution(light.color, self.specular_color) * light.specular_intensity * pow(v_dot_r,
+                                                                                                       self.shininess)
 
         return diffuse + specular
-

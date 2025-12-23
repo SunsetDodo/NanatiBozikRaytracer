@@ -2,7 +2,7 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List, Optional
 
-from src.vector3 import Vector3
+from vector3 import Vector3
 
 
 class SceneSingleton(type):

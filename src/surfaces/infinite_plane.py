@@ -1,17 +1,16 @@
 from typing import Optional
 
-from src.consts import EPSILON
-from src.ray import Ray
-from src.ray_hit import RayHit
-from src.vector3 import Vector3, dot
-from src.scene import Scene
+from consts import EPSILON
+from ray import Ray
+from ray_hit import RayHit
+from vector3 import Vector3, dot
+from scene import Scene
 from .surface import Surface
-
 
 
 class InfinitePlane(Surface):
     def __init__(self, normal, offset, material_index):
-        self.normal = normal
+        self.normal = Vector3.from_array(normal)
         self.offset = offset
         self.material_index = material_index
 
@@ -25,4 +24,4 @@ class InfinitePlane(Surface):
             return None
         hit_point = ray.origin + (ray.direction * t)
 
-        return RayHit(self, hit_point, Vector3.from_array(self.normal), self.material_index, t)
+        return RayHit(self, hit_point, self.normal, self.material_index, t)

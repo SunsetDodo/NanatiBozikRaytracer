@@ -1,9 +1,9 @@
 from packaging.version import VersionComparisonMethod
 
-from src.light import Light
-from src.ray_hit import RayHit
-from src.vector3 import Vector3
-from src.surfaces.surface import Surface
+from light import Light
+from ray_hit import RayHit
+from vector3 import Vector3
+from surfaces.surface import Surface
 from scene import Scene
 
 import heapq
@@ -42,26 +42,31 @@ def find_hit(ray, max_list_depth: int) -> List[RayHit]:
 
 def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
     if max_recursion_depth == -1:
-        return Scene().settings.background_color
+        return Vector3.from_array(Scene().settings.background_color)
 
     hit_list = find_hit(ray, max_recursion_depth)
     if not hit_list:
-        return Scene().settings.background_color
+        return Vector3.from_array(Scene().settings.background_color)
 
-    # TODO - implement bonus
     closest_hit = hit_list[0]
 
     color = Vector3.zero()
 
-    # Handle Lights and Shadows
     for light in Scene().lights:
         total_samples = Scene().settings.root_number_shadow_rays ** 2
         reachable_samples = 0
 
-        for sample in light.samples(light.get_position - closest_hit.point):
+        light_vector = light.get_position - closest_hit.point
+        light_dir = light_vector.normalized
+
+        for sample in light.samples(
+                light_vector):
             origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
-            shadow_ray = Ray(origin, sample - origin)
-            if find_hit(shadow_ray, max_recursion_depth) is not None:
+
+            sample_vector = sample - origin
+            shadow_ray = Ray(origin, sample_vector)
+
+            if not is_occluded(shadow_ray, 1.0):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
@@ -70,16 +75,20 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
         color_contrib = closest_hit.material.calculate_light(
             light=light,
             normal_dir=closest_hit.normal,
-            view_dir=ray.direction.normalized,
-            light_dir=light.get_position - closest_hit.point
+            view_dir=(ray.direction * -1).normalized,
+            light_dir=light_dir
         ) * shadow
         color += color_contrib
 
     if closest_hit.material.transparency > 0:
         pass
 
-
-    return color.clamp_01().to_tuple()
-
+    return color.clamp_01()
 
 
+def is_occluded(ray, max_distance: float) -> bool:
+    for surface in Scene().surfaces:
+        hit = surface.get_hit(ray)
+        if hit is not None and hit.distance < max_distance - Scene.EPSILON:
+            return True
+    return False

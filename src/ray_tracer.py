@@ -14,7 +14,7 @@ from scene_settings import SceneSettings
 from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
-
+from vector3 import Vector3
 from ray import Ray, trace_ray
 from viewport import Viewport
 
@@ -81,11 +81,10 @@ def parse_scene_file(file_path):
     return camera, scene_settings, objects
 
 
-def save_image(image_array):
-    image = Image.fromarray(np.uint8(image_array))
-
+def save_image(image_array, path):
+    image = Image.fromarray(np.uint8(image_array * 255))
     # Save the image to a file
-    image.save("scenes/Spheres.png")
+    image.save(path)
 
 
 def main():
@@ -109,17 +108,14 @@ def main():
     vp = Viewport(camera, args.width, args.height)
     origin = camera.get_position()
 
-    for x in range(args.width):
+    for x in tqdm.tqdm(range(args.width), desc="Rendering"):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            color = trace_ray(r, scene_settings.max_recursions)
-            image_array[y][x] = trace_ray(r, scene_settings.max_recursions)
+            color = trace_ray(r, scene_settings.max_recursions).clamp_01().to_tuple()
+            image_array[y][x] = color
 
-    # Dummy result
-
-    # Save the output image
-    save_image(image_array)
+    save_image(image_array, args.output_image)
 
 
 if __name__ == '__main__':

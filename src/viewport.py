@@ -1,7 +1,7 @@
 import logging
 import random
 
-from src.vector3 import Vector3, cross
+from vector3 import Vector3, cross
 from camera import Camera
 
 from math import atan, pi, tan
@@ -31,7 +31,7 @@ class Viewport:
 
         # Calculating right and down vectors of the viewport
         forward = (camera.get_look_at() - camera.get_position()).normalized
-        right = cross(forward, Vector3.from_array(camera.up_vector)).normalized
+        right = -cross(forward, Vector3.from_array(camera.up_vector)).normalized
         down = -cross(forward, right).normalized  # we cross again in case configured up and look at are not perpendicular
 
         self.u = right * self.width

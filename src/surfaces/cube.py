@@ -1,15 +1,15 @@
 from typing import Optional
 
-from src.consts import EPSILON
-from src.ray import Ray
-from src.ray_hit import RayHit
-from src.vector3 import Vector3, element_min, element_max
+from consts import EPSILON
+from ray import Ray
+from ray_hit import RayHit
+from vector3 import Vector3, element_min, element_max
 from .surface import Surface
 
 
 class Cube(Surface):
     def __init__(self, position, scale, material_index):
-        self.position = position
+        self.position = Vector3.from_array(position)
         self.scale = scale
         self.material_index = material_index
 
