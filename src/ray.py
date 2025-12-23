@@ -1,6 +1,7 @@
 import numpy as np
 
 from ray_hit import RayHit
+from src.consts import EPSILON
 from utils import normalize
 from scene import Scene
 
@@ -20,6 +21,9 @@ class Ray:
 def find_hit(ray, max_list_depth: int) -> list[RayHit]:
     surfaces = Scene().surfaces      # ideally pass this in instead of calling Scene()
     hits: list[RayHit] = []
+
+    if max_list_depth == 0:
+        return hits
 
     for surface in surfaces:
         ray_hit = surface.get_hit(ray)
@@ -47,17 +51,30 @@ def find_hit(ray, max_list_depth: int) -> list[RayHit]:
 
 
 
-def trace_ray(ray, max_recursion_depth: int = 10) -> np.array:
+def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None) -> np.array:
     if max_recursion_depth == -1:
-        return Scene().settings.background_color_np
+        return Scene().settings.background_color
 
-    hit_list = find_hit(ray, max_recursion_depth)
-    if not hit_list:
-        return Scene().settings.background_color_np
+    if hit_list is None:
+        hit_list = find_hit(ray, max_recursion_depth)
+
+    if len(hit_list) == 0:
+        return Scene().settings.background_color
 
     closest_hit = hit_list[0]
 
-    color = np.zeros(3, dtype=float)
+    # TODO - transparency is a scalar while reflection works separately for each channel, in theory if any of the channels are 0 we can skip their calculations.
+    background = Scene().settings.background_color
+    diffuse_spec = np.zeros(3, dtype=float)
+    reflection = np.zeros(3, dtype=float)
+
+    if closest_hit.material.transparency > 0:
+        background = trace_ray(ray, max_recursion_depth - 1, hit_list[1:])
+
+    if np.any(closest_hit.material.reflection_color):
+        reflect_dir = ray.direction - 2 * (ray.direction @ closest_hit.normal) * closest_hit.normal
+        reflect_ray = Ray(closest_hit.point + closest_hit.normal * EPSILON, reflect_dir)
+        reflection = trace_ray(reflect_ray, max_recursion_depth - 1) * closest_hit.material.reflection_color
 
     for light in Scene().lights:
         total_samples = Scene().settings.root_number_shadow_rays ** 2
@@ -84,10 +101,10 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> np.array:
             view_dir=normalize(ray.direction * -1),
             light_dir=light_dir
         ) * shadow
-        color += color_contrib
+        diffuse_spec += color_contrib
 
-    if closest_hit.material.transparency > 0:
-        pass
+    color = closest_hit.material.transparency * background + (1 - closest_hit.material.transparency) * diffuse_spec + reflection
+
 
     return np.clip(color, 0.0, 1.0)
 
