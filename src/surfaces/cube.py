@@ -14,7 +14,7 @@ class Cube(Surface):
         self.scale = scale
         self.material_index = material_index
 
-    def get_hit_np(self, ray: "Ray") -> Optional["RayHit"]:
+    def get_hit(self, ray: "Ray") -> Optional["RayHit"]:
         origin = ray.origin
         direction = ray.direction
 
