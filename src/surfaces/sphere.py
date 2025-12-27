@@ -1,13 +1,13 @@
 from math import sqrt
 from typing import Optional
 
-from src.consts import EPSILON
-from src.ray import Ray
-from src.ray_hit import RayHit
+from consts import EPSILON
+from ray import Ray
+from ray_hit import RayHit
 from .surface import Surface
 import numpy as np
 
-from src.utils import normalize
+from utils import normalize
 
 
 class Sphere(Surface):

@@ -34,6 +34,7 @@ class Material:
                 reflect_dir = normal_dir * ((light_dir * 2) @ normal_dir) - light_dir
             v_dot_r = view_dir @ reflect_dir
 
+        v_dot_r = max(0.0, v_dot_r)
         diffuse = light.color * self.diffuse_color * n_dot_l
         specular = light.color * self.specular_color * light.specular_intensity * pow(v_dot_r, self.shininess)
 

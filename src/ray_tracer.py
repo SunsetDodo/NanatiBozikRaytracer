@@ -106,12 +106,12 @@ def main():
 
     vp = Viewport(camera, args.width, args.height)
     origin = camera.position
-
+    surfaces = Scene().surfaces
     for x in tqdm.tqdm(range(args.width), desc="Rendering"):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            color = np.clip(trace_ray(r, scene_settings.max_recursions), 0.0, 1.0)
+            color = np.clip(trace_ray(r, scene_settings.max_recursions, surfaces=surfaces), 0.0, 1.0)
             image_array[y][x] = color
 
     save_image(image_array, args.output_image)

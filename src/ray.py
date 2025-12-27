@@ -1,7 +1,7 @@
 import numpy as np
 
 from ray_hit import RayHit
-from src.consts import EPSILON
+from consts import EPSILON
 from utils import normalize
 from scene import Scene
 
@@ -18,8 +18,7 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def find_hit(ray, max_list_depth: int) -> list[RayHit]:
-    surfaces = Scene().surfaces      # ideally pass this in instead of calling Scene()
+def find_hit(ray, max_list_depth: int, surfaces) -> list[RayHit]:
     hits: list[RayHit] = []
 
     if max_list_depth == 0:
@@ -50,13 +49,12 @@ def find_hit(ray, max_list_depth: int) -> list[RayHit]:
     return hits
 
 
-
-def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None) -> np.array:
+def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None, surfaces=None) -> np.array:
     if max_recursion_depth == -1:
         return Scene().settings.background_color
 
     if hit_list is None:
-        hit_list = find_hit(ray, max_recursion_depth)
+        hit_list = find_hit(ray, max_recursion_depth, surfaces)
 
     if len(hit_list) == 0:
         return Scene().settings.background_color
@@ -69,12 +67,15 @@ def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None)
     reflection = np.zeros(3, dtype=float)
 
     if closest_hit.material.transparency > 0:
-        background = trace_ray(ray, max_recursion_depth - 1, hit_list[1:])
+        new_origin = closest_hit.point + ray.direction * Scene.EPSILON
+        new_ray = Ray(new_origin, ray.direction)
+        background = trace_ray(new_ray, max_recursion_depth - 1, hit_list=None, surfaces=surfaces)
 
     if np.any(closest_hit.material.reflection_color):
         reflect_dir = ray.direction - 2 * (ray.direction @ closest_hit.normal) * closest_hit.normal
         reflect_ray = Ray(closest_hit.point + closest_hit.normal * EPSILON, reflect_dir)
-        reflection = trace_ray(reflect_ray, max_recursion_depth - 1) * closest_hit.material.reflection_color
+        reflection = trace_ray(reflect_ray, max_recursion_depth - 1,
+                               surfaces=surfaces) * closest_hit.material.reflection_color
 
     for light in Scene().lights:
         total_samples = Scene().settings.root_number_shadow_rays ** 2
@@ -89,7 +90,7 @@ def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None)
 
             shadow_ray = Ray(origin, sample - origin)
 
-            if not is_occluded(shadow_ray, max_recursion_depth):
+            if not is_occluded(shadow_ray, 1.0 ,surfaces):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
@@ -103,12 +104,13 @@ def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None)
         ) * shadow
         diffuse_spec += color_contrib
 
-    color = closest_hit.material.transparency * background + (1 - closest_hit.material.transparency) * diffuse_spec + reflection
-
+    color = closest_hit.material.transparency * background + (
+            1 - closest_hit.material.transparency) * diffuse_spec + reflection
 
     return np.clip(color, 0.0, 1.0)
 
-def is_occluded(ray, max_distance: float) -> bool:
+
+def is_occluded(ray, max_distance: float, surfaces) -> bool:
     for surface in Scene().surfaces:
         hit = surface.get_hit(ray)
         if hit is not None and hit.distance < max_distance - Scene.EPSILON:
