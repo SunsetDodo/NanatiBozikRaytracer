@@ -3,6 +3,6 @@ from typing import Optional
 
 
 class Surface:
-    def get_hit(self, ray: 'Ray') -> Optional['RayHit']:
+    def get_hit(self, ray: 'Ray', scene: 'Scene') -> Optional['RayHit']:
         raise NotImplementedError()
 

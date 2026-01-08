@@ -18,9 +18,6 @@ class RayHit:
     material: Material or int
     distance: float
 
-    def __post_init__(self):
-        self.material = Scene().materials[self.material - 1]
-
     def __gt__(self, other):
         if isinstance(other, RayHit):
             return self.distance > other.distance

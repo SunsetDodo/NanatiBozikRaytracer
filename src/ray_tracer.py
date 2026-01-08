@@ -77,7 +77,7 @@ def parse_scene_file(file_path):
                 s.lights.append(light)
             else:
                 raise ValueError("Unknown object type: {}".format(obj_type))
-    return camera, scene_settings, objects
+    return s
 
 
 def save_image(image_array, path):
@@ -101,17 +101,16 @@ def main():
     logger.info("Starting Raytracing, width: %d height: %d (Aspect Ratio is: %.2f)", args.width, args.height, aspect_ratio)
 
     # Parse the scene file
-    camera, scene_settings, objects = parse_scene_file(args.scene_file)
+    s = parse_scene_file(args.scene_file)
     image_array = np.zeros((args.height, args.width, 3))
 
-    vp = Viewport(camera, args.width, args.height)
-    origin = camera.position
-    surfaces = Scene().surfaces
+    vp = Viewport(s.camera, args.width, args.height)
+    origin = s.camera.position
     for x in tqdm.tqdm(range(args.width), desc="Rendering"):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            color = np.clip(trace_ray(r, scene_settings.max_recursions, surfaces=surfaces), 0.0, 1.0)
+            color = np.clip(trace_ray(s, r, s.settings.max_recursions), 0.0, 1.0)
             image_array[y][x] = color
 
     save_image(image_array, args.output_image)

@@ -14,7 +14,7 @@ class Cube(Surface):
         self.scale = scale
         self.material_index = material_index
 
-    def get_hit(self, ray: "Ray") -> Optional["RayHit"]:
+    def get_hit(self, ray: "Ray", scene: 'Scene') -> Optional["RayHit"]:
         origin = ray.origin
         direction = ray.direction
 
@@ -54,4 +54,4 @@ class Cube(Surface):
         normal = np.zeros(3, dtype=origin.dtype)
         normal[axis] = -1.0 if diff[axis] < 0.0 else 1.0
 
-        return RayHit(self, hit_point, normal, self.material_index, t)
+        return RayHit(self, hit_point, normal, scene[self.material_index - 1], t)

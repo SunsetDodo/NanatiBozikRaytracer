@@ -40,13 +40,13 @@ class Light:
 
     import numpy as np
 
-    def samples(self, direction: np.ndarray) -> np.ndarray:
+    def samples(self, direction: np.ndarray, scene) -> np.ndarray:
         dir_norm = direction / np.linalg.norm(direction)
 
         t, b = _build_orthogonal_basis(dir_norm, self.radius)
         top_left = self.position - (t + b) * 0.5
 
-        n = int(Scene().settings.root_number_shadow_rays)
+        n = int(scene.settings.root_number_shadow_rays)
 
         t_step = t / n
         b_step = b / n

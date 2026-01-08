@@ -16,7 +16,7 @@ class Sphere(Surface):
         self.radius = radius
         self.material_index = material_index
 
-    def get_hit(self, ray: 'Ray') -> Optional['RayHit']:
+    def get_hit(self, ray: 'Ray', scene) -> Optional['RayHit']:
         look_at = self.position - ray.origin
 
         a = ray.direction @ ray.direction
@@ -42,4 +42,4 @@ class Sphere(Surface):
         hit_point = ray.at(t)
         normal = normalize(hit_point - self.position)
 
-        return RayHit(self, hit_point, normal, self.material_index, t)
+        return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t)

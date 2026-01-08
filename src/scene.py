@@ -1,15 +1,7 @@
 from __future__ import annotations
 from typing import List, Optional
 
-class SceneSingleton(type):
-    instance = None
-    def __call__(cls, *args, **kwargs):
-        if cls.instance is None:
-            cls.instance = super().__call__(*args, **kwargs)
-        return cls.instance
-
-
-class Scene(metaclass=SceneSingleton):
+class Scene:
     settings: Optional['SceneSettings']
     camera: Optional['Camera']
     surfaces: List['Surface']

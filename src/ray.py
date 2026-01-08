@@ -18,14 +18,14 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def find_hit(ray, max_list_depth: int, surfaces) -> list[RayHit]:
+def find_hit(scene, ray, max_list_depth: int) -> list[RayHit]:
     hits: list[RayHit] = []
 
     if max_list_depth == 0:
         return hits
 
-    for surface in surfaces:
-        ray_hit = surface.get_hit(ray)
+    for surface in scene.surfaces:
+        ray_hit = surface.get_hit(ray, scene)
         if ray_hit is None:
             continue
 
@@ -49,48 +49,45 @@ def find_hit(ray, max_list_depth: int, surfaces) -> list[RayHit]:
     return hits
 
 
-def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None, surfaces=None) -> np.array:
+def trace_ray(scene, ray, max_recursion_depth: int = 10) -> np.array:
     if max_recursion_depth == -1:
-        return Scene().settings.background_color
+        return scene.settings.background_color
 
-    if hit_list is None:
-        hit_list = find_hit(ray, max_recursion_depth, surfaces)
+    hit_list = find_hit(scene, ray, max_recursion_depth)
 
     if len(hit_list) == 0:
-        return Scene().settings.background_color
+        return scene.settings.background_color
 
     closest_hit = hit_list[0]
 
     # TODO - transparency is a scalar while reflection works separately for each channel, in theory if any of the channels are 0 we can skip their calculations.
-    background = Scene().settings.background_color
+    background = scene.settings.background_color
     diffuse_spec = np.zeros(3, dtype=float)
     reflection = np.zeros(3, dtype=float)
 
     if closest_hit.material.transparency > 0:
         new_origin = closest_hit.point + ray.direction * Scene.EPSILON
         new_ray = Ray(new_origin, ray.direction)
-        background = trace_ray(new_ray, max_recursion_depth - 1, hit_list=None, surfaces=surfaces)
+        background = trace_ray(scene, new_ray, max_recursion_depth - 1)
 
     if np.any(closest_hit.material.reflection_color):
         reflect_dir = ray.direction - 2 * (ray.direction @ closest_hit.normal) * closest_hit.normal
         reflect_ray = Ray(closest_hit.point + closest_hit.normal * EPSILON, reflect_dir)
-        reflection = trace_ray(reflect_ray, max_recursion_depth - 1,
-                               surfaces=surfaces) * closest_hit.material.reflection_color
+        reflection = trace_ray(scene, reflect_ray, max_recursion_depth - 1) * closest_hit.material.reflection_color
 
-    for light in Scene().lights:
-        total_samples = Scene().settings.root_number_shadow_rays ** 2
+    for light in scene.lights:
+        total_samples = scene.settings.root_number_shadow_rays ** 2
         reachable_samples = 0
 
         light_vector = light.position - closest_hit.point
         light_dir = normalize(light_vector)
 
-        for sample in light.samples(
-                light_vector):
+        for sample in light.samples(light_vector, scene):
             origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
 
             shadow_ray = Ray(origin, sample - origin)
 
-            if not is_occluded(shadow_ray, 1.0 ,surfaces):
+            if not is_occluded(scene, shadow_ray, 1.0):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
@@ -110,9 +107,9 @@ def trace_ray(ray, max_recursion_depth: int = 10, hit_list: List[RayHit] = None,
     return np.clip(color, 0.0, 1.0)
 
 
-def is_occluded(ray, max_distance: float, surfaces) -> bool:
-    for surface in Scene().surfaces:
-        hit = surface.get_hit(ray)
+def is_occluded(scene, ray, max_distance: float) -> bool:
+    for surface in scene.surfaces:
+        hit = surface.get_hit(ray, scene)
         if hit is not None and hit.distance < max_distance - Scene.EPSILON:
             return True
     return False

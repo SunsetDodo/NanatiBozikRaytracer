@@ -14,7 +14,7 @@ class InfinitePlane(Surface):
         self.offset = offset
         self.material_index = material_index
 
-    def get_hit(self, ray: 'Ray') -> Optional['RayHit']:
+    def get_hit(self, ray: 'Ray', scene: 'Scene') -> Optional['RayHit']:
         d_prod = ray.direction @ self.normal
         if abs(d_prod) < EPSILON:
             return None
@@ -24,4 +24,4 @@ class InfinitePlane(Surface):
             return None
         hit_point = ray.origin + (ray.direction * t)
 
-        return RayHit(self, hit_point, self.normal, self.material_index, t)
+        return RayHit(self, hit_point, self.normal, scene.materials[self.material_index - 1], t)
