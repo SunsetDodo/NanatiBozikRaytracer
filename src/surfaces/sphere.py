@@ -8,6 +8,7 @@ from .surface import Surface
 import numpy as np
 
 from utils import normalize
+from bvh import AABB
 
 
 class Sphere(Surface):
@@ -43,3 +44,31 @@ class Sphere(Surface):
         normal = normalize(hit_point - self.position)
 
         return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t)
+
+    def hit_distance(self, ray: "Ray", t_min: float, t_max: float) -> Optional[float]:
+        look_at = self.position - ray.origin
+
+        a = ray.direction @ ray.direction
+        b = -2.0 * (ray.direction @ look_at)
+        c = (look_at @ look_at) - (self.radius ** 2)
+
+        discriminant = (b ** 2) - (4 * a * c)
+        if discriminant < 0:
+            return None
+
+        sqrt_disc = sqrt(discriminant)
+        inv_2a = 1.0 / (2.0 * a)
+        t0 = (-b - sqrt_disc) * inv_2a
+        if t_min < t0 < t_max:
+            return float(t0)
+
+        t1 = (-b + sqrt_disc) * inv_2a
+        if t_min < t1 < t_max:
+            return float(t1)
+
+        return None
+
+    def bounding_box(self) -> AABB:
+        r = float(self.radius)
+        offset = np.array([r, r, r], dtype=self.position.dtype)
+        return AABB(self.position - offset, self.position + offset)

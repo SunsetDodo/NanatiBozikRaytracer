@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from functools import cached_property
-from typing import Generator
+from typing import Generator, Iterable
 
 from scene import Scene
 
@@ -37,10 +37,11 @@ class Light:
         self.specular_intensity = specular_intensity
         self.shadow_intensity = shadow_intensity
         self.radius = radius
+        self._sample_cache = {}
 
     import numpy as np
 
-    def samples(self, direction: np.ndarray, scene) -> np.ndarray:
+    def samples(self, direction: np.ndarray, scene) -> Iterable[np.ndarray]:
         dir_norm = direction / np.linalg.norm(direction)
 
         t, b = _build_orthogonal_basis(dir_norm, self.radius)
@@ -48,17 +49,20 @@ class Light:
 
         n = int(scene.settings.root_number_shadow_rays)
 
+        cache = self._sample_cache.get(n)
+        if cache is None:
+            x_jitters = np.random.random((n, n))
+            y_jitters = np.random.random((n, n))
+            cache = (x_jitters, y_jitters)
+            self._sample_cache[n] = cache
+        else:
+            x_jitters, y_jitters = cache
+
         t_step = t / n
         b_step = b / n
 
-        idx = np.arange(n, dtype=np.float64)
-        x_idx, y_idx = np.meshgrid(idx, idx, indexing="xy")
-
-        x_jitters = np.random.random((n, n))
-        y_jitters = np.random.random((n, n))
-
-        x_offsets = (x_idx + x_jitters)[..., None] * t_step  # (n, n, 3)
-        y_offsets = (y_idx + y_jitters)[..., None] * b_step  # (n, n, 3)
-
-        all_points = (top_left + x_offsets + y_offsets).reshape(-1, 3)
-        return all_points
+        # n is small (usually 2..8); a simple generator avoids large allocations
+        # on every shading call and is faster than re-creating numpy grids.
+        for i in range(n):
+            for j in range(n):
+                yield top_left + (i + x_jitters[i, j]) * t_step + (j + y_jitters[i, j]) * b_step

@@ -77,6 +77,7 @@ def parse_scene_file(file_path):
                 s.lights.append(light)
             else:
                 raise ValueError("Unknown object type: {}".format(obj_type))
+    s.build_acceleration()
     return s
 
 

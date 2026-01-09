@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-import sys
-
 from dataclasses import dataclass
 import numpy as np
 
-from scene import Scene
 from surfaces.surface import Surface
 from material import Material
 

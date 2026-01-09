@@ -5,7 +5,6 @@ from consts import EPSILON
 from utils import normalize
 from scene import Scene
 
-import heapq
 from typing import List, Optional
 
 
@@ -13,6 +12,13 @@ class Ray:
     def __init__(self, origin: np.array, direction: np.array):
         self.origin = origin
         self.direction = direction
+        # Cache float components for extremely hot AABB tests (BVH traversal).
+        self.ox = float(origin[0])
+        self.oy = float(origin[1])
+        self.oz = float(origin[2])
+        self.dx = float(direction[0])
+        self.dy = float(direction[1])
+        self.dz = float(direction[2])
 
     def at(self, distance: float):
         return self.origin + self.direction * distance
@@ -24,28 +30,22 @@ def find_hit(scene, ray, max_list_depth: int) -> list[RayHit]:
     if max_list_depth == 0:
         return hits
 
-    for surface in scene.surfaces:
-        ray_hit = surface.get_hit(ray, scene)
-        if ray_hit is None:
-            continue
+    # Collect consecutive hits along the ray, useful for transparency stacks.
+    # (Most shading uses only the closest hit, but this preserves the previous API.)
+    current_ray = ray
+    traveled = 0.0
+    for _ in range(max_list_depth):
+        hit = scene.closest_hit(current_ray, t_min=EPSILON)
+        if hit is None:
+            break
 
-        d = ray_hit.distance
+        # Convert hit.distance to be relative to the original ray origin.
+        hit.distance += traveled
+        hits.append(hit)
 
-        if len(hits) < max_list_depth:
-            hits.append(ray_hit)
-        else:
-            worst_idx = 0
-            worst_dist = hits[0].distance
-            for i in range(1, len(hits)):
-                dist_i = hits[i].distance
-                if dist_i > worst_dist:
-                    worst_dist = dist_i
-                    worst_idx = i
+        traveled = hit.distance
+        current_ray = Ray(hit.point + current_ray.direction * Scene.EPSILON, current_ray.direction)
 
-            if d < worst_dist:
-                hits[worst_idx] = ray_hit
-
-    hits.sort(key=lambda h: h.distance)
     return hits
 
 
@@ -108,8 +108,4 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10) -> np.array:
 
 
 def is_occluded(scene, ray, max_distance: float) -> bool:
-    for surface in scene.surfaces:
-        hit = surface.get_hit(ray, scene)
-        if hit is not None and hit.distance < max_distance - Scene.EPSILON:
-            return True
-    return False
+    return scene.any_hit(ray, t_min=EPSILON, t_max=max_distance - Scene.EPSILON)

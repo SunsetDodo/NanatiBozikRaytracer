@@ -25,3 +25,16 @@ class InfinitePlane(Surface):
         hit_point = ray.origin + (ray.direction * t)
 
         return RayHit(self, hit_point, self.normal, scene.materials[self.material_index - 1], t)
+
+    def hit_distance(self, ray: "Ray", t_min: float, t_max: float) -> Optional[float]:
+        d_prod = ray.direction @ self.normal
+        if abs(d_prod) < EPSILON:
+            return None
+
+        t = (self.offset - (ray.origin @ self.normal)) / d_prod
+        if t_min < t < t_max:
+            return float(t)
+        return None
+
+    def bounding_box(self):
+        return None
