@@ -9,13 +9,13 @@ set 		0.1  	0.1  	0.1   	4 	6
 # --- MATERIALS ---
 
 # MTL 1: Waterfall White (High Specular)
-mtl		0.9	0.9	1.0	0.8	0.8	0.8	0.2	0.2	0.2	50	0.2
+mtl		0.6	0.6	1.0	0.8	0.8	0.8	0.2	0.2	0.2	50	0.2
 
 # MTL 2: Rock Wall Grey/Green (Matte)
-mtl		0.3	0.35	0.3	0.1	0.1	0.1	0	0	0	5	0
+mtl		0.4	0.5	0.4	0.1	0.1	0.1	0	0	0	5	0
 
 # MTL 3: Shirt Maroon
-mtl		0.6	0.1	0.15	0.2	0.2	0.2	0	0	0	10	0
+mtl		0.6	0.1	0.15	0.2	0.2	0.2	0.2	0.2	0.2	10	0
 
 # MTL 4: Skin Tone
 mtl		0.8	0.6	0.45	0.3	0.3	0.3	0	0	0	10	0

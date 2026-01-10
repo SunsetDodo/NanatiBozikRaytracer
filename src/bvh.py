@@ -6,49 +6,83 @@ from ray_hit import RayHit
 
 import numpy as np
 
-from consts import EPSILON
-
-
-def intersect_aabb(ray: Ray, min_pt: np.ndarray, max_pt: np.ndarray):
-    t1 = (min_pt - ray.origin) * ray.inv_direction
-    t2 = (max_pt - ray.origin) * ray.inv_direction
-
-    t_min_vec = np.minimum(t1, t2)
-    t_max_vec = np.maximum(t1, t2)
-
-    t_enter = float(t_min_vec.max())
-    t_exit = float(t_max_vec.min())
-
-    return t_enter, t_exit
+from consts import EPSILON, INF
 
 
 class AABB:
-    __slots__ = ("min_point", "max_point")
+    __slots__ = ("min0", "min1", "min2", "max0", "max1", "max2")
 
     def __init__(self, minimum, maximum):
-        self.min_point = np.array(minimum, dtype=np.float64)
-        self.max_point = np.array(maximum, dtype=np.float64)
+        self.min0 = float(minimum[0])
+        self.min1 = float(minimum[1])
+        self.min2 = float(minimum[2])
+        self.max0 = float(maximum[0])
+        self.max1 = float(maximum[1])
+        self.max2 = float(maximum[2])
 
     def centroid(self) -> np.ndarray:
-        return (self.min_point + self.max_point) * 0.5
+        return np.array(
+            [
+                (self.min0 + self.max0) * 0.5,
+                (self.min1 + self.max1) * 0.5,
+                (self.min2 + self.max2) * 0.5,
+            ],
+            dtype=np.float64,
+        )
 
     def hit(self, ray: Ray, t_min: float, t_max: float) -> bool:
+        # Faster slab-method implementation we didn't use in cube.py becuase of no time
 
-        t_enter, t_exit = intersect_aabb(ray, self.min_point, self.max_point)
+        ox, oy, oz = ray.ox, ray.oy, ray.oz
+        dx, dy, dz = ray.dx, ray.dy, ray.dz
 
-        if t_exit < t_enter:
+        # X
+        inv_d = INF if dx == 0.0 else (1.0 / dx)
+        t0 = (self.min0 - ox) * inv_d
+        t1 = (self.max0 - ox) * inv_d
+        if inv_d < 0.0:
+            t0, t1 = t1, t0
+        if t0 > t_min:
+            t_min = t0
+        if t1 < t_max:
+            t_max = t1
+        if t_max <= t_min:
             return False
 
-        if t_exit < t_min or t_enter > t_max:
+        # Y
+        inv_d = INF if dy == 0.0 else (1.0 / dy)
+        t0 = (self.min1 - oy) * inv_d
+        t1 = (self.max1 - oy) * inv_d
+        if inv_d < 0.0:
+            t0, t1 = t1, t0
+        if t0 > t_min:
+            t_min = t0
+        if t1 < t_max:
+            t_max = t1
+        if t_max <= t_min:
+            return False
+
+        # Z
+        inv_d = INF if dz == 0.0 else (1.0 / dz)
+        t0 = (self.min2 - oz) * inv_d
+        t1 = (self.max2 - oz) * inv_d
+        if inv_d < 0.0:
+            t0, t1 = t1, t0
+        if t0 > t_min:
+            t_min = t0
+        if t1 < t_max:
+            t_max = t1
+        if t_max <= t_min:
             return False
 
         return True
 
 
 def surrounding_box(a: AABB, b: AABB) -> AABB:
-    new_min = np.minimum(a.min_point, b.min_point)
-    new_max = np.maximum(a.max_point, b.max_point)
-    return AABB(new_min, new_max)
+    return AABB(
+        (min(a.min0, b.min0), min(a.min1, b.min1), min(a.min2, b.min2)),
+        (max(a.max0, b.max0), max(a.max1, b.max1), max(a.max2, b.max2)),
+    )
 
 
 def build_range(items_range) -> BVHNode:
