@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from functools import cached_property
-from typing import Generator, Iterable
-
-from scene import Scene
+from typing import Iterable
 
 import numpy as np
+
 
 def _build_orthogonal_basis(direction: np.ndarray, radius: float):
     dx, dy, dz = direction
@@ -27,7 +25,6 @@ def _build_orthogonal_basis(direction: np.ndarray, radius: float):
         bitangent /= b_len
 
     return tangent * radius, bitangent * radius
-
 
 
 class Light:

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Camera:
     def __init__(self, position, look_at, up_vector, screen_distance, screen_width):
         self.position = np.array(position)

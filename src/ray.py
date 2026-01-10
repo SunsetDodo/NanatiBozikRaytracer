@@ -43,7 +43,7 @@ def hit_list(scene, ray, max_list_depth: int) -> list[RayHit]:
         hits.append(hit)
 
         traveled = hit.distance
-        current_ray = Ray(hit.point + current_ray.direction * Scene.EPSILON, current_ray.direction)
+        current_ray = Ray(hit.point + current_ray.direction * EPSILON, current_ray.direction)
 
     return hits
 
@@ -61,7 +61,7 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
     reflection = np.zeros(3, dtype=float)
 
     if closest_hit.material.transparency > 0:
-        new_origin = closest_hit.point + ray.direction * Scene.EPSILON
+        new_origin = closest_hit.point + ray.direction * EPSILON
         new_ray = Ray(new_origin, ray.direction)
         background = trace_ray(scene, new_ray, max_recursion_depth - 1)
 
@@ -77,8 +77,8 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
         light_dir = normalize(light_vector)
 
         light_hits = 0
-        for sample in light.samples(light_vector, scene):
-            origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
+        for sample in light.samples(light_dir, scene):
+            origin = closest_hit.point + closest_hit.normal * EPSILON
 
             shadow_ray = Ray(origin, sample - origin)
             if scene.advanced_shadows:
@@ -111,4 +111,4 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
 
 
 def is_occluded(scene, ray, max_distance: float) -> bool:
-    return scene.any_hit(ray, t_min=EPSILON, t_max=max_distance - Scene.EPSILON)
+    return scene.any_hit(ray, t_min=EPSILON, t_max=max_distance - EPSILON)

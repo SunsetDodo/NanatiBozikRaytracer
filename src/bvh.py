@@ -175,11 +175,9 @@ class BVHNode:
 
         right_hit = self.right.hit_closest(ray, scene, t_min, t_max) if self.right is not None else None
 
-        if right_hit is None:
-            return left_hit
-        if left_hit is None:
-            return right_hit
-        return right_hit if right_hit.distance < left_hit.distance else left_hit
+        if left_hit and right_hit:
+            return left_hit if left_hit.distance < right_hit.distance else right_hit
+        return left_hit or right_hit
 
     def hit_any(self, ray: Ray, scene, t_min: float, t_max: float) -> bool:
         """

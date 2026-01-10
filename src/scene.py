@@ -18,8 +18,6 @@ class Scene:
     lights: List['Light']
     bvh: Optional[BVHNode]
 
-    # Hardcoded constants
-    EPSILON = 1e-9
     INF = float("inf")
 
     def __init__(self):

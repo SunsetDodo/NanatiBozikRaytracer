@@ -28,6 +28,7 @@ class Material:
 
         if estimate:
             highlight_dir = light_dir + view_dir
+            highlight_dir = highlight_dir / np.linalg.norm(highlight_dir)
             v_dot_r = highlight_dir @ normal_dir
         else:
             if reflect_dir is None:

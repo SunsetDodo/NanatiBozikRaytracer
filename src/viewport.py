@@ -43,7 +43,7 @@ class Viewport:
 
         center = camera.position + forward * camera.screen_distance
         self.top_left = center - self.u / 2 - self.v / 2
-        self.start_pixel = self.top_left + (self.delta_u + self.delta_v) / 2
+        self.start_pixel = self.top_left
 
     def get_pixel_center(self, x, y) -> np.array:
         return self.start_pixel + self.delta_u * x + self.delta_v * y
