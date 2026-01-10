@@ -85,8 +85,7 @@ def main():
     vp = Viewport(s.camera, args.width, args.height)
     origin = s.camera.position
 
-    import tqdm
-    for x in tqdm.tqdm(range(args.width)):
+    for x in range(args.width):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)

@@ -1,3 +1,5 @@
+# Image is a cute reference to our image added as well :)
+
 # Camera setup
 cam 	  	0   	2   	15 	0   	0   	0  	0   	1   	0   	1.8  	1	
 
