@@ -72,30 +72,35 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
 
     for light in scene.lights:
         total_samples = scene.settings.root_number_shadow_rays ** 2
-        light_reachability = np.zeros(3, dtype=float)
 
         light_vector = light.position - closest_hit.point
         light_dir = normalize(light_vector)
 
+        light_hits = 0
         for sample in light.samples(light_vector, scene):
             origin = closest_hit.point + closest_hit.normal * Scene.EPSILON
-            current_light_reachability = np.ones(3, dtype=float)
 
             shadow_ray = Ray(origin, sample - origin)
-            hits = hit_list(scene, shadow_ray, max_recursion_depth - 1)
-            for hit in hits:
-                current_light_reachability *= hit.material.diffuse_color * hit.material.transparency
+            if scene.advanced_shadows:
+                accumulated_transparency = 1.0
 
-            light_reachability += current_light_reachability
+                hits = hit_list(scene, shadow_ray, max_recursion_depth - 1)
+                for hit in hits:
+                    accumulated_transparency *= hit.material.transparency
 
-        average_light_contrib = light_reachability / total_samples
+                light_hits += accumulated_transparency
+            else:
+                light_hits += 1.0 - is_occluded(scene, shadow_ray, float(np.linalg.norm(sample - origin)))
+
+        average_light_contrib = light_hits / total_samples
         shadow = 1.0 - light.shadow_intensity * (1.0 - average_light_contrib)
 
         color_contrib = closest_hit.material.calculate_light(
             light=light,
             normal_dir=closest_hit.normal,
             view_dir=normalize(ray.direction * -1),
-            light_dir=light_dir
+            light_dir=light_dir,
+            estimate=scene.estimate_reflections
         ) * shadow
         diffuse_spec += color_contrib
 

@@ -95,7 +95,7 @@ def main():
     parser.add_argument('--height', type=int, default=400, help='Image height')
 
     # enable transparency check in shadow rays
-    parser.add_argument('--advanced-shadow', action='store_true', help='Enable advanced shadows')
+    parser.add_argument('--advanced-shadows', action='store_true', help='Enable advanced shadows')
 
     # estimate reflection dir when calculating specular
     parser.add_argument('--estimate-reflections', action='store_true', help='Estimate reflections')
@@ -110,6 +110,10 @@ def main():
 
     # Parse the scene file
     s = parse_scene_file(args.scene_file)
+    s.advanced_shadows = args.advanced_shadows
+    s.estimate_reflections = args.estimate_reflections
+
+
     image_array = np.zeros((args.height, args.width, 3))
 
     vp = Viewport(s.camera, args.width, args.height)

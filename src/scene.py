@@ -31,6 +31,8 @@ class Scene:
         self.materials = []
         self.lights = []
         self.bvh = None
+        self.advanced_shadows = False
+        self.estimate_reflections = False
 
     def background_color(self):
         return self.settings.background_color_np
