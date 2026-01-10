@@ -10,10 +10,11 @@ from bvh import AABB, intersect_aabb
 
 
 class Cube(Surface):
-    def __init__(self, position, scale, material_index):
+    def __init__(self, position, scale, material_index, obj_id):
         self.position = np.array(position)
         self.scale = scale
         self.material_index = material_index
+        self.obj_id = obj_id
 
         half_size = 0.5 * self.scale
         offset = np.array([half_size, half_size, half_size], dtype=float)

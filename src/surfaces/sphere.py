@@ -7,15 +7,15 @@ from ray_hit import RayHit
 from .surface import Surface
 import numpy as np
 
-from utils import normalize
 from bvh import AABB
 
 
 class Sphere(Surface):
-    def __init__(self, position, radius, material_index):
+    def __init__(self, position, radius, material_index, obj_id):
         self.position =np.array(position)
         self.radius = float(radius)
         self.material_index = material_index
+        self.obj_id = obj_id
 
     def get_hit(self, ray: 'Ray', scene) -> Optional['RayHit']:
         look_at = self.position - ray.origin

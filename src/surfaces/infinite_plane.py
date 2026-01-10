@@ -9,10 +9,11 @@ from .surface import Surface
 
 
 class InfinitePlane(Surface):
-    def __init__(self, normal, offset, material_index):
+    def __init__(self, normal, offset, material_index, obj_id):
         self.normal = np.array(normal)
         self.offset = offset
         self.material_index = material_index
+        self.obj_id = obj_id
 
     def get_hit(self, ray: 'Ray', scene: 'Scene') -> Optional['RayHit']:
         d_prod = ray.direction @ self.normal

@@ -18,7 +18,7 @@ def parse_scene_file(file_path):
     s = Scene()
 
     with open(file_path, 'r') as f:
-        for line in f:
+        for obj_id, line in enumerate(f):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
@@ -35,13 +35,13 @@ def parse_scene_file(file_path):
                 material = Material(params[:3], params[3:6], params[6:9], params[9], params[10])
                 s.materials.append(material)
             elif obj_type == "sph":
-                sphere = Sphere(params[:3], params[3], int(params[4]))
+                sphere = Sphere(params[:3], params[3], int(params[4]), obj_id)
                 s.finite_surfaces.append(sphere)
             elif obj_type == "pln":
-                plane = InfinitePlane(params[:3], params[3], int(params[4]))
+                plane = InfinitePlane(params[:3], params[3], int(params[4]), obj_id)
                 s.infinite_surfaces.append(plane)
             elif obj_type == "box":
-                cube = Cube(params[:3], params[3], int(params[4]))
+                cube = Cube(params[:3], params[3], int(params[4]), obj_id)
                 s.finite_surfaces.append(cube)
             elif obj_type == "lgt":
                 light = Light(params[:3], params[3:6], params[6], params[7], params[8])

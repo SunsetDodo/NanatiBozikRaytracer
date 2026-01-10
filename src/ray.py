@@ -19,7 +19,10 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def trace_ray(scene, ray, max_recursion_depth: int = 10):
+def trace_ray(scene, ray, max_recursion_depth: int = 10, processed_objects: set = None):
+    if processed_objects is None:
+        processed_objects = set()
+
     if max_recursion_depth == -1:
         return scene.settings.background_color
 
@@ -65,11 +68,12 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
                     if hit is None:
                         break
 
-                    if scene.process_inner:
-                        current_t = hit.distance + EPSILON
-                    else:
-                        current_t = hit.distance + hit.skip_distance
+                    current_t = hit.distance + EPSILON
+                    if not scene.process_inner and hit.surface.obj_id in processed_objects:
+                        continue
+
                     accumulated_transparency *= hit.material.transparency
+                    processed_objects.add(hit.surface.obj_id)
 
                     if accumulated_transparency == 0.0:
                         break
