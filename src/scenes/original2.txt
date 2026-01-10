@@ -1,0 +1,71 @@
+# Camera setup
+cam 	  	0   	2   	15 	0   	0   	0  	0   	1   	0   	1.8  	1	
+
+# Settings
+set 		0.1  	0.1  	0.1   	4 	6
+
+# --- MATERIALS ---
+
+# MTL 1: Matte Grey (Rock Wall)
+mtl		0.3	0.3	0.3	0.1	0.1	0.1	0	0	0	5	0
+
+# MTL 2: Chrome/Mirror (Floor) - Highly Reflective
+mtl		0.1	0.1	0.1	0.7	0.7	0.7	0.8	0.8	0.8	50	0
+
+# MTL 3: Shirt Maroon
+mtl		0.6	0.1	0.15	0.2	0.2	0.2	0	0	0	10	0
+
+# MTL 4: Skin Tone
+mtl		0.8	0.6	0.45	0.3	0.3	0.3	0	0	0	10	0
+
+# MTL 5: Hat/Hair Dark Grey
+mtl		0.2	0.2	0.2	0.1	0.1	0.1	0	0	0	5	0
+
+# MTL 6: WATER/GLASS (Transparent & Reflective)
+# Diffuse is low, Specular is high, Transparency (last val) is 0.85
+mtl		0	0.1	0.2	0.8	0.8	0.8	0.2	0.2	0.2	80	0.85
+
+# --- OBJECTS ---
+
+# Background: Rock Cliff Plane
+pln		0	0	1	-5	1
+
+# Floor: Mirror Plane (Reflects the figures)
+pln		0	1	0	-2	2
+
+# --- THE WATERFALL (Transparent Bubbles) ---
+# Using MTL 6 for transparency
+
+sph		-3.5	3	-2	0.7	6
+sph		-3.5	-1	-2	0.7	6
+
+sph		3.5	4	-3	0.7	6
+sph		3.5	0	-3	0.7	6
+
+# --- GEOMETRIC SHAPES (Cubes) ---
+# Trying to add a cube using standard syntax (Center X, Y, Z, Size, Mat)
+# If your renderer crashes, remove the line below.
+box		0	3	-3	1.5	6
+
+
+# --- THE SUBJECTS ---
+
+# Subject 1 (Left Guy - Leaning IN)
+sph		-1.0	-1.5	2	1.4	3
+sph		-0.6	0.5	2	0.75	4
+sph		-0.7	1.1	1.8	0.5	5
+
+# Subject 2 (Right Guy - Upright)
+sph		1.1	-1.5	2	1.5	3
+sph		1.1	0.8	2	0.8	4
+sph		1.1	1.5	2	0.5	5
+
+
+# --- LIGHTS ---
+# Adjusted to shine through the glass
+
+# Light 1: Sunlight (Strong key light)
+lgt		5	15	10	0.9	0.9	0.8	1	1	0.5
+
+# Light 2: Backlight (To highlight transparency)
+lgt		0	5	-8	0.6	0.8	1.0	1	0.5	0.5

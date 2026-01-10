@@ -21,6 +21,9 @@ class Ray:
         self.dy = float(direction[1])
         self.dz = float(direction[2])
 
+        with np.errstate(divide='ignore'):
+            self.inv_direction = 1.0 / direction
+
     def at(self, distance: float):
         return self.origin + self.direction * distance
 
