@@ -31,6 +31,7 @@ class Scene:
         self.bvh = None
         self.advanced_shadows = False
         self.estimate_reflections = False
+        self.process_inner = True
 
     def background_color(self):
         return self.settings.background_color_np
@@ -64,7 +65,7 @@ class Scene:
             hit = s.get_hit(ray, self)
             if hit is None:
                 continue
-            if hit.distance < t_min or hit.distance > t_max:
+            if not  t_min < hit.distance < t_max:
                 continue
             best_hit = hit
             t_max = hit.distance
@@ -76,14 +77,7 @@ class Scene:
             return True
 
         for s in self.infinite_surfaces:
-            fn = getattr(s, "hit_distance", None)
-            if fn is not None:
-                if fn(ray, t_min, t_max) is not None:
-                    return True
-                continue
-
-            hit = s.get_hit(ray, self)
-            if hit is not None and (t_min < hit.distance < t_max):
+            if s.hit_distance(ray, t_min, t_max) is not None:
                 return True
 
         return False

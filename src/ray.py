@@ -25,29 +25,6 @@ class Ray:
         return self.origin + self.direction * distance
 
 
-def hit_list(scene, ray, max_list_depth: int) -> list[RayHit]:
-    hits: list[RayHit] = []
-
-    if max_list_depth == 0:
-        return hits
-
-    current_ray = ray
-    traveled = 0.0
-    for _ in range(max_list_depth):
-        hit = scene.closest_hit(current_ray, t_min=EPSILON)
-        if hit is None:
-            break
-
-        # Convert hit.distance to be relative to the original ray origin.
-        hit.distance += traveled
-        hits.append(hit)
-
-        traveled = hit.distance
-        current_ray = Ray(hit.point + current_ray.direction * EPSILON, current_ray.direction)
-
-    return hits
-
-
 def trace_ray(scene, ray, max_recursion_depth: int = 10):
     if max_recursion_depth == -1:
         return scene.settings.background_color
@@ -57,11 +34,15 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
         return scene.settings.background_color
 
     background = scene.settings.background_color
-    diffuse_spec = np.zeros(3, dtype=float)
-    reflection = np.zeros(3, dtype=float)
+    diffuse_spec = np.zeros(3, dtype=np.float64)
+    reflection = np.zeros(3, dtype=np.float64)
 
     if closest_hit.material.transparency > 0:
-        new_origin = closest_hit.point + ray.direction * EPSILON
+        if scene.process_inner:
+            new_origin = closest_hit.point + ray.direction * EPSILON
+        else:
+            new_origin = closest_hit.point + ray.direction * closest_hit.skip_distance
+
         new_ray = Ray(new_origin, ray.direction)
         background = trace_ray(scene, new_ray, max_recursion_depth - 1)
 
@@ -83,10 +64,23 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
             shadow_ray = Ray(origin, sample - origin)
             if scene.advanced_shadows:
                 accumulated_transparency = 1.0
+                current_t = EPSILON
 
-                hits = hit_list(scene, shadow_ray, max_recursion_depth - 1)
-                for hit in hits:
+                for _ in range(max_recursion_depth):
+                    hit = scene.closest_hit(shadow_ray, t_min=current_t)
+                    if hit is None:
+                        break
+
+                    if scene.process_inner:
+                        current_t = hit.distance + EPSILON
+                    else:
+                        current_t = hit.distance + hit.skip_distance
                     accumulated_transparency *= hit.material.transparency
+
+                    if accumulated_transparency == 0.0:
+                        break
+                else:
+                    accumulated_transparency = 0.0
 
                 light_hits += accumulated_transparency
             else:

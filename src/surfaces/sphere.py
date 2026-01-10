@@ -43,7 +43,7 @@ class Sphere(Surface):
         hit_point = ray.at(t)
         normal = normalize(hit_point - self.position)
 
-        return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t)
+        return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t, abs(t0 - t1) + EPSILON)
 
     def hit_distance(self, ray: "Ray", t_min: float, t_max: float) -> Optional[float]:
         look_at = self.position - ray.origin

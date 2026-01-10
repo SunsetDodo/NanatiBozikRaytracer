@@ -37,7 +37,7 @@ class Cube(Surface):
         normal = np.zeros(3, dtype=origin.dtype)
         normal[axis] = -1.0 if diff[axis] < 0.0 else 1.0
 
-        return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t)
+        return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t, abs(t_enter - t_exit) + EPSILON)
 
     def hit_distance(self, ray: "Ray", t_min: float, t_max: float) -> Optional[float]:
         t_enter, t_exit = self._get_enter_exit(ray)

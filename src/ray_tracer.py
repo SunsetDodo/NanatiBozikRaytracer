@@ -1,12 +1,6 @@
 import argparse
 from PIL import Image
 import numpy as np
-import os
-import sys
-import datetime
-import logging
-import tqdm
-
 from camera import Camera
 from light import Light
 from material import Material
@@ -20,25 +14,8 @@ from viewport import Viewport
 from scene import Scene
 
 
-
-def setup_logger(log_level = logging.INFO):
-    os.makedirs("logs", exist_ok=True)
-    logfile = os.path.join("logs", f"{datetime.datetime.now().isoformat()}.log")
-    logging.basicConfig(
-        level=log_level,
-        format="[%(asctime)s][%(levelname)s][%(name)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            logging.FileHandler(logfile, encoding="utf8")
-        ]
-    )
-
-
 def parse_scene_file(file_path):
     objects = []
-    camera = None
-    scene_settings = None
     s = Scene()
 
     with open(file_path, 'r') as f:
@@ -91,34 +68,30 @@ def main():
     parser = argparse.ArgumentParser(description='Python Ray Tracer')
     parser.add_argument('scene_file', type=str, help='Path to the scene file')
     parser.add_argument('output_image', type=str, help='Name of the output image file')
-    parser.add_argument('--width', type=int, default=600, help='Image width')
-    parser.add_argument('--height', type=int, default=400, help='Image height')
+    parser.add_argument('--width', type=int, default=500, help='Image width')
+    parser.add_argument('--height', type=int, default=500, help='Image height')
 
     # enable transparency check in shadow rays
-    parser.add_argument('--advanced-shadows', action='store_true', help='Enable advanced shadows')
+    parser.add_argument('--fast-shadows', action='store_true', help='Disable advanced soft shadows')
 
-    # estimate reflection dir when calculating specular
     parser.add_argument('--estimate-reflections', action='store_true', help='Estimate reflections')
 
-    args = parser.parse_args()
-    setup_logger(logging.DEBUG)
-    logger = logging.getLogger("Raytracer").getChild("Main")
+    parser.add_argument('--process-inner', action='store_true', help='Process rays inside surfaces')
 
-    # TODO - maybe remove me
-    aspect_ratio = args.width / args.height
-    logger.info("Starting Raytracing, width: %d height: %d (Aspect Ratio is: %.2f)", args.width, args.height, aspect_ratio)
+    args = parser.parse_args()
 
     # Parse the scene file
     s = parse_scene_file(args.scene_file)
-    s.advanced_shadows = args.advanced_shadows
+    s.advanced_shadows = not args.fast_shadows
     s.estimate_reflections = args.estimate_reflections
-
+    s.process_inner = args.process_inner
 
     image_array = np.zeros((args.height, args.width, 3))
 
     vp = Viewport(s.camera, args.width, args.height)
     origin = s.camera.position
-    for x in tqdm.tqdm(range(args.width), desc="Rendering"):
+    import tqdm
+    for x in tqdm.tqdm(range(args.width)):
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)

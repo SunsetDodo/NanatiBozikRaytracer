@@ -24,7 +24,7 @@ class InfinitePlane(Surface):
             return None
         hit_point = ray.origin + (ray.direction * t)
 
-        return RayHit(self, hit_point, self.normal, scene.materials[self.material_index - 1], t)
+        return RayHit(self, hit_point, self.normal, scene.materials[self.material_index - 1], t, EPSILON)
 
     def hit_distance(self, ray: "Ray", t_min: float, t_max: float) -> Optional[float]:
         d_prod = ray.direction @ self.normal

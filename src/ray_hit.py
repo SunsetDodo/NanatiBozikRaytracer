@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Union
+
 import numpy as np
 
+from consts import EPSILON
 from surfaces.surface import Surface
 from material import Material
 
@@ -10,10 +13,11 @@ from material import Material
 @dataclass
 class RayHit:
     surface: Surface
-    point: np.array
-    normal: np.array
-    material: Material or int
+    point: np.ndarray
+    normal: np.ndarray
+    material: Union[Material, int]
     distance: float
+    skip_distance: float = EPSILON
 
     def __gt__(self, other):
         if isinstance(other, RayHit):

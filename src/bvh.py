@@ -1,24 +1,15 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Optional, Sequence, TYPE_CHECKING
+from typing import Optional, Sequence
+from ray import Ray
+from ray_hit import RayHit
 
 import numpy as np
 
 from consts import EPSILON
 
-if TYPE_CHECKING:
-    from ray import Ray
-    from ray_hit import RayHit
-
 
 class AABB:
-    """
-    Axis-aligned bounding box.
-
-    Stored as python floats for speed: this box test is extremely hot.
-    """
-
     __slots__ = ("min0", "min1", "min2", "max0", "max1", "max2")
 
     def __init__(self, minimum, maximum):
@@ -40,10 +31,6 @@ class AABB:
         )
 
     def hit(self, ray: Ray, t_min: float, t_max: float) -> bool:
-        """
-        Slab test. Returns True if ray intersects the box in [t_min, t_max].
-        Uses ray cached float components (ox/oy/oz/dx/dy/dz) for speed.
-        """
         ox, oy, oz = ray.ox, ray.oy, ray.oz
         dx, dy, dz = ray.dx, ray.dy, ray.dz
 
@@ -96,31 +83,46 @@ def surrounding_box(a: AABB, b: AABB) -> AABB:
     )
 
 
+def build_range(items_range) -> BVHNode:
+    n = len(items_range)
+    if n == 1:
+        s, bbox, _ = items_range[0]
+        return BVHNode(aabb=bbox, surface=s)
+    if n == 2:
+        left = build_range(items_range[:1])
+        right = build_range(items_range[1:])
+        return BVHNode(aabb=surrounding_box(left.aabb, right.aabb), left=left, right=right)
+
+    centroids = np.stack([c for (_, _, c) in items_range], axis=0)
+    axis = int(np.argmax(np.var(centroids, axis=0)))
+
+    items_sorted = sorted(items_range, key=lambda it: float(it[2][axis]))
+    mid = n // 2
+    left = build_range(items_sorted[:mid])
+    right = build_range(items_sorted[mid:])
+    return BVHNode(aabb=surrounding_box(left.aabb, right.aabb), left=left, right=right)
+
+
 class BVHNode:
-    __slots__ = ("bbox", "left", "right", "surface", "hit_distance_fn")
+    __slots__ = ("aabb", "left", "right", "surface")
 
     def __init__(
         self,
-        bbox: AABB,
+        aabb: AABB,
         left: Optional["BVHNode"] = None,
         right: Optional["BVHNode"] = None,
         surface=None,
     ):
-        self.bbox = bbox
+        self.aabb = aabb
         self.left = left
         self.right = right
-        self.surface = surface  # leaf payload
-        self.hit_distance_fn = getattr(surface, "hit_distance", None) if surface is not None else None
+        self.surface = surface
 
     @staticmethod
     def build(surfaces: Sequence) -> Optional["BVHNode"]:
-        """
-        Build a BVH over *finite* surfaces (surfaces must have a bounding_box()).
-        """
         if not surfaces:
             return None
 
-        # Collect (surface, bbox, centroid) once to avoid repeated bbox calls.
         items = []
         for s in surfaces:
             bbox = s.bounding_box()
@@ -132,32 +134,10 @@ class BVHNode:
         if not items:
             return None
 
-        def build_range(items_range) -> "BVHNode":
-            n = len(items_range)
-            if n == 1:
-                s, bbox, _ = items_range[0]
-                return BVHNode(bbox=bbox, surface=s)
-            if n == 2:
-                left = build_range(items_range[:1])
-                right = build_range(items_range[1:])
-                return BVHNode(bbox=surrounding_box(left.bbox, right.bbox), left=left, right=right)
-
-            centroids = np.stack([c for (_, _, c) in items_range], axis=0)
-            axis = int(np.argmax(np.var(centroids, axis=0)))
-
-            items_sorted = sorted(items_range, key=lambda it: float(it[2][axis]))
-            mid = n // 2
-            left = build_range(items_sorted[:mid])
-            right = build_range(items_sorted[mid:])
-            return BVHNode(bbox=surrounding_box(left.bbox, right.bbox), left=left, right=right)
-
         return build_range(items)
 
     def hit_closest(self, ray: Ray, scene, t_min: float = EPSILON, t_max: float = float("inf")) -> Optional[RayHit]:
-        """
-        Returns the closest hit within [t_min, t_max], or None.
-        """
-        if not self.bbox.hit(ray, t_min, t_max):
+        if not self.aabb.hit(ray, t_min, t_max):
             return None
 
         if self.surface is not None:
@@ -168,7 +148,6 @@ class BVHNode:
                 return None
             return hit
 
-        # Internal node: traverse both, pruning with current closest.
         left_hit = self.left.hit_closest(ray, scene, t_min, t_max) if self.left is not None else None
         if left_hit is not None:
             t_max = min(t_max, left_hit.distance)
@@ -180,19 +159,11 @@ class BVHNode:
         return left_hit or right_hit
 
     def hit_any(self, ray: Ray, scene, t_min: float, t_max: float) -> bool:
-        """
-        Returns True if there exists any hit within [t_min, t_max].
-        """
-        if not self.bbox.hit(ray, t_min, t_max):
+        if not self.aabb.hit(ray, t_min, t_max):
             return False
 
         if self.surface is not None:
-            # Fast path for shadow rays: avoid allocating RayHit if possible.
-            fn = self.hit_distance_fn
-            if fn is None:
-                hit = self.surface.get_hit(ray, scene)
-                return hit is not None and (t_min < hit.distance < t_max)
-            t = fn(ray, t_min, t_max)
+            t = self.surface.hit_distance(ray, t_min, t_max)
             return t is not None
 
         if self.left is not None and self.left.hit_any(ray, scene, t_min, t_max):
