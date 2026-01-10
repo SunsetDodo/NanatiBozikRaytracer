@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
-from ray import Ray
-from ray_hit import RayHit
+from typing import Optional, Sequence, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ray import Ray
+    from ray_hit import RayHit
 
 import numpy as np
 
-from consts import EPSILON
+from consts import EPSILON, INF
 
 
 class AABB:
@@ -35,7 +37,7 @@ class AABB:
         dx, dy, dz = ray.dx, ray.dy, ray.dz
 
         # X
-        inv_d = float("inf") if dx == 0.0 else (1.0 / dx)
+        inv_d = INF if dx == 0.0 else (1.0 / dx)
         t0 = (self.min0 - ox) * inv_d
         t1 = (self.max0 - ox) * inv_d
         if inv_d < 0.0:
@@ -48,7 +50,7 @@ class AABB:
             return False
 
         # Y
-        inv_d = float("inf") if dy == 0.0 else (1.0 / dy)
+        inv_d = INF if dy == 0.0 else (1.0 / dy)
         t0 = (self.min1 - oy) * inv_d
         t1 = (self.max1 - oy) * inv_d
         if inv_d < 0.0:
@@ -61,7 +63,7 @@ class AABB:
             return False
 
         # Z
-        inv_d = float("inf") if dz == 0.0 else (1.0 / dz)
+        inv_d = INF if dz == 0.0 else (1.0 / dz)
         t0 = (self.min2 - oz) * inv_d
         t1 = (self.max2 - oz) * inv_d
         if inv_d < 0.0:
@@ -136,7 +138,7 @@ class BVHNode:
 
         return build_range(items)
 
-    def hit_closest(self, ray: Ray, scene, t_min: float = EPSILON, t_max: float = float("inf")) -> Optional[RayHit]:
+    def hit_closest(self, ray: Ray, scene, t_min: float = EPSILON, t_max: float = INF) -> Optional[RayHit]:
         if not self.aabb.hit(ray, t_min, t_max):
             return None
 

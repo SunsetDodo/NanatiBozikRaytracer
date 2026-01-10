@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List, Optional, TYPE_CHECKING
 
 from bvh import BVHNode
-from consts import EPSILON
+from consts import EPSILON, INF
 
 if TYPE_CHECKING:
     from ray import Ray
@@ -18,8 +18,6 @@ class Scene:
     lights: List['Light']
     bvh: Optional[BVHNode]
 
-    INF = float("inf")
-
     def __init__(self):
         self.settings = None
         self.camera = None
@@ -31,7 +29,7 @@ class Scene:
         self.bvh = None
         self.advanced_shadows = False
         self.estimate_reflections = False
-        self.process_inner = True
+        self.process_inner = False
 
     def background_color(self):
         return self.settings.background_color_np
