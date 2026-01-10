@@ -1,28 +1,21 @@
 import numpy as np
 
-from ray_hit import RayHit
 from consts import EPSILON
 from utils import normalize
-from scene import Scene
-
-from typing import List, Optional
 
 
 class Ray:
     def __init__(self, origin: np.array, direction: np.array):
         self.origin = origin
         self.direction = direction
+        self.inv_direction = 1.0 / np.where(direction == 0, EPSILON, direction)
 
-        # Fast access to ray components
         self.ox = float(origin[0])
         self.oy = float(origin[1])
         self.oz = float(origin[2])
         self.dx = float(direction[0])
         self.dy = float(direction[1])
         self.dz = float(direction[2])
-
-        with np.errstate(divide='ignore'):
-            self.inv_direction = 1.0 / direction
 
     def at(self, distance: float):
         return self.origin + self.direction * distance
