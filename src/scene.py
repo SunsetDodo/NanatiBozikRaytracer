@@ -20,6 +20,7 @@ class Scene:
 
     # Hardcoded constants
     EPSILON = 1e-9
+    INF = float("inf")
 
     def __init__(self):
         self.settings = None
@@ -50,7 +51,7 @@ class Scene:
 
         self.bvh = BVHNode.build(self.finite_surfaces) if self.finite_surfaces else None
 
-    def closest_hit(self, ray: "Ray", t_min: float = EPSILON, t_max: float = float("inf")) -> Optional["RayHit"]:
+    def closest_hit(self, ray: "Ray", t_min: float = EPSILON, t_max: float = INF) -> Optional["RayHit"]:
         best_hit: Optional[RayHit] = None
 
         if self.bvh is not None:
@@ -58,7 +59,7 @@ class Scene:
             if best_hit is not None:
                 t_max = min(t_max, best_hit.distance)
 
-        # Infinite/unbounded surfaces are typically few; just test them linearly.
+        # Checking infinite surfaces seperately as they dont fit in AABB
         for s in self.infinite_surfaces:
             hit = s.get_hit(ray, self)
             if hit is None:

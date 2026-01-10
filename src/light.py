@@ -37,7 +37,6 @@ class Light:
         self.specular_intensity = specular_intensity
         self.shadow_intensity = shadow_intensity
         self.radius = radius
-        self._sample_cache = {}
 
     import numpy as np
 
@@ -49,20 +48,12 @@ class Light:
 
         n = int(scene.settings.root_number_shadow_rays)
 
-        cache = self._sample_cache.get(n)
-        if cache is None:
-            x_jitters = np.random.random((n, n))
-            y_jitters = np.random.random((n, n))
-            cache = (x_jitters, y_jitters)
-            self._sample_cache[n] = cache
-        else:
-            x_jitters, y_jitters = cache
+        x_jitters = np.random.random((n, n))
+        y_jitters = np.random.random((n, n))
 
         t_step = t / n
         b_step = b / n
 
-        # n is small (usually 2..8); a simple generator avoids large allocations
-        # on every shading call and is faster than re-creating numpy grids.
         for i in range(n):
             for j in range(n):
                 yield top_left + (i + x_jitters[i, j]) * t_step + (j + y_jitters[i, j]) * b_step

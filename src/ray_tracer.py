@@ -93,6 +93,13 @@ def main():
     parser.add_argument('output_image', type=str, help='Name of the output image file')
     parser.add_argument('--width', type=int, default=600, help='Image width')
     parser.add_argument('--height', type=int, default=400, help='Image height')
+
+    # enable transparency check in shadow rays
+    parser.add_argument('--advanced-shadow', action='store_true', help='Enable advanced shadows')
+
+    # estimate reflection dir when calculating specular
+    parser.add_argument('--estimate-reflections', action='store_true', help='Estimate reflections')
+
     args = parser.parse_args()
     setup_logger(logging.DEBUG)
     logger = logging.getLogger("Raytracer").getChild("Main")

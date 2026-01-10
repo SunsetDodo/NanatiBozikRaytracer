@@ -14,7 +14,7 @@ from bvh import AABB
 class Sphere(Surface):
     def __init__(self, position, radius, material_index):
         self.position =np.array(position)
-        self.radius = radius
+        self.radius = float(radius)
         self.material_index = material_index
 
     def get_hit(self, ray: 'Ray', scene) -> Optional['RayHit']:
@@ -60,15 +60,14 @@ class Sphere(Surface):
         inv_2a = 1.0 / (2.0 * a)
         t0 = (-b - sqrt_disc) * inv_2a
         if t_min < t0 < t_max:
-            return float(t0)
+            return t0
 
         t1 = (-b + sqrt_disc) * inv_2a
         if t_min < t1 < t_max:
-            return float(t1)
+            return t1
 
         return None
 
     def bounding_box(self) -> AABB:
-        r = float(self.radius)
-        offset = np.array([r, r, r], dtype=self.position.dtype)
+        offset = np.array([self.radius, self.radius, self.radius], dtype=self.position.dtype)
         return AABB(self.position - offset, self.position + offset)
