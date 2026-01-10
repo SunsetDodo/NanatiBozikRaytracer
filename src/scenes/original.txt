@@ -1,0 +1,69 @@
+# Camera setup
+cam 	  	0   	2   	15 	0   	0   	0  	0   	1   	0   	1.8  	1	
+
+# Settings
+set 		0.1  	0.1  	0.1   	4 	6
+
+# --- MATERIALS ---
+
+# MTL 1: Waterfall White (High Specular)
+mtl		0.9	0.9	1.0	0.8	0.8	0.8	0.2	0.2	0.2	50	0.2
+
+# MTL 2: Rock Wall Grey/Green (Matte)
+mtl		0.3	0.35	0.3	0.1	0.1	0.1	0	0	0	5	0
+
+# MTL 3: Shirt Maroon
+mtl		0.6	0.1	0.15	0.2	0.2	0.2	0	0	0	10	0
+
+# MTL 4: Skin Tone
+mtl		0.8	0.6	0.45	0.3	0.3	0.3	0	0	0	10	0
+
+# MTL 5: Hat/Hair Dark Grey
+mtl		0.2	0.2	0.2	0.1	0.1	0.1	0	0	0	5	0
+
+# --- OBJECTS ---
+
+# Background: Rock Cliff Plane
+pln		0	0	1	-5	2
+
+# --- THE WATERFALL (Optimized) ---
+# Smaller spheres, less overlap, fewer objects for speed
+
+# Left Stream (High and Low)
+sph		-3.5	3	-2	0.6	1
+sph		-3.5	-1	-2	0.6	1
+
+# Right Stream (High and Low)
+sph		3.5	4	-3	0.6	1
+sph		3.5	0	-3	0.6	1
+
+
+# --- THE SUBJECTS (Moved Closer) ---
+
+# Subject 1 (Left Guy - Leaning IN)
+# Body (Moved from -2.0 to -1.0)
+sph		-1.0	-1.5	2	1.4	3
+# Head (Leaning towards center, x = -0.6)
+sph		-0.6	0.5	2	0.75	4
+# Hat (Angled with head)
+sph		-0.7	1.1	1.8	0.5	5
+
+# Subject 2 (Right Guy - Upright)
+# Body (Moved from 1.8 to 1.1)
+sph		1.1	-1.5	2	1.5	3
+# Head (Upright at 1.1)
+sph		1.1	0.8	2	0.8	4
+# Hat (Upright)
+sph		1.1	1.5	2	0.5	5
+
+
+# --- LIGHTS ---
+
+# Light 1: Sunlight
+lgt		5	15	10	0.9	0.9	0.8	1	1	0.5
+
+# Light 2: Waterfall Glare
+lgt		0	5	-5	0.4	0.4	0.6	1	0.5	0.5
+
+# Light 3: Fill Light
+lgt		-2	2	15	0.5	0.5	0.5	1	0.5	0.5

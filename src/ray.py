@@ -6,6 +6,7 @@ class Ray:
     def __init__(self, origin: np.array, direction: np.array):
         self.origin = origin
         self.direction = direction
+        self.inv_direction = 1.0 / np.where(direction == 0, EPSILON, direction)
 
         self.ox = float(origin[0])
         self.oy = float(origin[1])
