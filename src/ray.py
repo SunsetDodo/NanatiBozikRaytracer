@@ -1,19 +1,12 @@
 import numpy as np
 
-from ray_hit import RayHit
 from consts import EPSILON
-from utils import normalize
-from scene import Scene
-
-from typing import List, Optional
-
 
 class Ray:
     def __init__(self, origin: np.array, direction: np.array):
         self.origin = origin
         self.direction = direction
 
-        # Fast access to ray components
         self.ox = float(origin[0])
         self.oy = float(origin[1])
         self.oz = float(origin[2])
@@ -55,7 +48,7 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
         total_samples = scene.settings.root_number_shadow_rays ** 2
 
         light_vector = light.position - closest_hit.point
-        light_dir = normalize(light_vector)
+        light_dir = light_vector / np.linalg.norm(light_vector)
 
         light_hits = 0
         for sample in light.samples(light_dir, scene):
@@ -92,7 +85,7 @@ def trace_ray(scene, ray, max_recursion_depth: int = 10):
         color_contrib = closest_hit.material.calculate_light(
             light=light,
             normal_dir=closest_hit.normal,
-            view_dir=normalize(ray.direction * -1),
+            view_dir=(ray.direction * -1) / np.linalg.norm(ray.direction),
             light_dir=light_dir,
             estimate=scene.estimate_reflections
         ) * shadow

@@ -18,7 +18,6 @@ def _build_orthogonal_basis(direction: np.ndarray, radius: float):
     if t_len != 0.0:
         tangent /= t_len
 
-    # bitangent = normalize(cross(direction, tangent))
     bitangent = np.cross(direction, tangent)
     b_len = np.linalg.norm(bitangent)
     if b_len != 0.0:

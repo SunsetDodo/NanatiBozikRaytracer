@@ -15,7 +15,6 @@ from scene import Scene
 
 
 def parse_scene_file(file_path):
-    objects = []
     s = Scene()
 
     with open(file_path, 'r') as f:
@@ -34,27 +33,21 @@ def parse_scene_file(file_path):
                 s.settings = scene_settings
             elif obj_type == "mtl":
                 material = Material(params[:3], params[3:6], params[6:9], params[9], params[10])
-                objects.append(material)
                 s.materials.append(material)
             elif obj_type == "sph":
                 sphere = Sphere(params[:3], params[3], int(params[4]))
-                objects.append(sphere)
-                s.surfaces.append(sphere)
+                s.finite_surfaces.append(sphere)
             elif obj_type == "pln":
                 plane = InfinitePlane(params[:3], params[3], int(params[4]))
-                objects.append(plane)
-                s.surfaces.append(plane)
+                s.infinite_surfaces.append(plane)
             elif obj_type == "box":
                 cube = Cube(params[:3], params[3], int(params[4]))
-                objects.append(cube)
-                s.surfaces.append(cube)
+                s.finite_surfaces.append(cube)
             elif obj_type == "lgt":
                 light = Light(params[:3], params[3:6], params[6], params[7], params[8])
-                objects.append(light)
                 s.lights.append(light)
             else:
                 raise ValueError("Unknown object type: {}".format(obj_type))
-    s.build_acceleration()
     return s
 
 
@@ -85,11 +78,13 @@ def main():
     s.advanced_shadows = not args.fast_shadows
     s.estimate_reflections = args.estimate_reflections
     s.process_inner = args.process_inner
+    s.build_acceleration()
 
     image_array = np.zeros((args.height, args.width, 3))
 
     vp = Viewport(s.camera, args.width, args.height)
     origin = s.camera.position
+
     import tqdm
     for x in tqdm.tqdm(range(args.width)):
         for y in range(args.height):

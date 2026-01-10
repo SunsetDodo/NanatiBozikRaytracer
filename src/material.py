@@ -15,12 +15,12 @@ class Material:
         self.transparency = transparency
 
     def calculate_light(self, light: Light,
-                        normal_dir: np.array,
-                        light_dir: np.array,
-                        view_dir: np.array,
-                        reflect_dir: np.array = None,
+                        normal_dir: np.ndarray,
+                        light_dir: np.ndarray,
+                        view_dir: np.ndarray,
+                        reflect_dir: np.ndarray = None,
                         estimate: bool = False
-                        ) -> np.array:
+                        ) -> np.ndarray:
 
         n_dot_l = normal_dir @ light_dir
         if n_dot_l <= 0:
@@ -29,11 +29,11 @@ class Material:
         if estimate:
             highlight_dir = light_dir + view_dir
             highlight_dir = highlight_dir / np.linalg.norm(highlight_dir)
-            v_dot_r = highlight_dir @ normal_dir
+            v_dot_r = float(highlight_dir @ normal_dir)
         else:
             if reflect_dir is None:
                 reflect_dir = normal_dir * ((light_dir * 2) @ normal_dir) - light_dir
-            v_dot_r = view_dir @ reflect_dir
+            v_dot_r = float(view_dir @ reflect_dir)
 
         v_dot_r = max(0.0, v_dot_r)
         diffuse = light.color * self.diffuse_color * n_dot_l

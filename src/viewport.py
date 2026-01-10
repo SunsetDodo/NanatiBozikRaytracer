@@ -2,9 +2,11 @@ import random
 
 import numpy as np
 from camera import Camera
-from utils import normalize
 
 from math import atan
+
+def _normalize(v: np.ndarray) -> np.ndarray:
+    return v / np.linalg.norm(v)
 
 class Viewport:
     def __init__(self, camera: Camera, image_width: int, image_height: int):
@@ -17,9 +19,9 @@ class Viewport:
         self.vertical_fov = 2 * atan(self.height / (2 * camera.screen_distance))
 
         # Calculating right and down vectors of the viewport
-        forward = normalize(camera.look_at - camera.position)
-        right = -normalize(np.cross(forward, camera.up_vector))
-        down = -normalize(np.cross(forward, right))
+        forward = _normalize(camera.look_at - camera.position)
+        right = -_normalize(np.cross(forward, camera.up_vector))
+        down = -_normalize(np.cross(forward, right))
 
         self.u = right * self.width
         self.v = down * self.height

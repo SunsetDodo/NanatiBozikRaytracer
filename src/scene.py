@@ -21,7 +21,6 @@ class Scene:
     def __init__(self):
         self.settings = None
         self.camera = None
-        self.surfaces = []
         self.finite_surfaces = []
         self.infinite_surfaces = []
         self.materials = []
@@ -35,19 +34,6 @@ class Scene:
         return self.settings.background_color_np
 
     def build_acceleration(self) -> None:
-        self.finite_surfaces = []
-        self.infinite_surfaces = []
-
-        for s in self.surfaces:
-            if getattr(s, "bounding_box", None) is None:
-                self.infinite_surfaces.append(s)
-                continue
-            bbox = s.bounding_box()
-            if bbox is None:
-                self.infinite_surfaces.append(s)
-            else:
-                self.finite_surfaces.append(s)
-
         self.bvh = BVHNode.build(self.finite_surfaces) if self.finite_surfaces else None
 
     def closest_hit(self, ray: "Ray", t_min: float = EPSILON, t_max: float = INF) -> Optional["RayHit"]:
@@ -58,7 +44,7 @@ class Scene:
             if best_hit is not None:
                 t_max = min(t_max, best_hit.distance)
 
-        # Checking infinite surfaces seperately as they dont fit in AABB
+        # Checking infinite planes seperately as they dont fit in AABB
         for s in self.infinite_surfaces:
             hit = s.get_hit(ray, self)
             if hit is None:

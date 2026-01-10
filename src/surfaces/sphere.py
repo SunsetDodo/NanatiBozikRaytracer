@@ -41,7 +41,8 @@ class Sphere(Surface):
             return None
 
         hit_point = ray.at(t)
-        normal = normalize(hit_point - self.position)
+        normal = hit_point - self.position
+        normal /= np.linalg.norm(normal)
 
         return RayHit(self, hit_point, normal, scene.materials[self.material_index - 1], t, abs(t0 - t1) + EPSILON)
 
