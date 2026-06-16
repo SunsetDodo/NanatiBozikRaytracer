@@ -14,6 +14,7 @@ from scene_settings import SceneSettings
 from surfaces.cube import Cube
 from surfaces.infinite_plane import InfinitePlane
 from surfaces.sphere import Sphere
+from surfaces.triangle import load_obj
 from vector3 import Vector3
 from ray import Ray, trace_ray
 from viewport import Viewport
@@ -49,6 +50,14 @@ def parse_scene_file(file_path):
                 continue
             parts = line.split()
             obj_type = parts[0]
+            if obj_type == "obj":
+                obj_path = parts[1]
+                material_index = int(parts[2])
+                scene_dir = os.path.dirname(os.path.abspath(file_path))
+                triangles = load_obj(os.path.join(scene_dir, obj_path), material_index)
+                objects.extend(triangles)
+                s.surfaces.extend(triangles)
+                continue
             params = [float(p) for p in parts[1:]]
             if obj_type == "cam":
                 camera = Camera(params[:3], params[3:6], params[6:9], params[9], params[10])

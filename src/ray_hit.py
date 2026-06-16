@@ -3,13 +3,14 @@ from __future__ import annotations
 import sys
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Optional
 
 from scene import Scene
-from surfaces.surface import Surface
 from vector3 import Vector3
 from material import Material
 
-from typing import Optional
+if TYPE_CHECKING:
+    from surfaces.surface import Surface
 
 @dataclass
 class RayHit:
