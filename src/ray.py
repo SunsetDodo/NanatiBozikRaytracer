@@ -40,11 +40,11 @@ def find_hit(ray, max_list_depth: int) -> List[RayHit]:
     return result_hits
 
 
-def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
-    if max_recursion_depth == -1:
+def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
+    if depth <= 0:
         return Vector3.from_array(Scene().settings.background_color)
 
-    hit_list = find_hit(ray, max_recursion_depth)
+    hit_list = find_hit(ray, depth)
     if not hit_list:
         return Vector3.from_array(Scene().settings.background_color)
 
@@ -81,7 +81,7 @@ def trace_ray(ray, max_recursion_depth: int = 10) -> Vector3:
         color += color_contrib
 
     if closest_hit.material.transparency > 0:
-        pass
+        pass  # recursive call must use trace_ray(refracted_ray, scene, depth - 1)
 
     return color.clamp_01()
 
