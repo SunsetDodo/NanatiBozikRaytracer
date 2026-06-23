@@ -66,17 +66,21 @@ def test_empty_scene_returns_background_at_any_depth():
 
 
 def test_no_recursion_error_at_depth_5(monkeypatch):
-    """Depth guard prevents infinite recursion from mutually-facing mirror surfaces.
+    """Simulation: depth guard prevents infinite recursion from mutually-facing mirrors.
 
-    trace_ray is replaced with a version that unconditionally recurses through
-    ray_module.trace_ray on every call — creating real stack recursion that
-    the depth guard must stop.  Without the guard this would RecursionError.
+    NOTE: This is a simulation test.  Because reflection call-sites in trace_ray
+    are currently `pass` stubs, trace_ray never actually recurses.  This test
+    replaces trace_ray with mirror_trace (which does recurse through the patched
+    module-level name) to exercise that a depth guard *can* stop runaway recursion.
+    The guard validated here belongs to mirror_trace, not to the production
+    trace_ray.  Restructure once the reflection branch is implemented so the real
+    trace_ray guard is exercised end-to-end.
     """
     reset_scene(max_bounce_depth=5)
     r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
 
     def mirror_trace(ray, depth=5):
-        if depth <= 0:
+        if depth < 0:
             return Vector3.from_array(Scene().settings.background_color)
         # Recurse through the module-level name so the monkeypatch keeps the
         # loop alive — simulating two mirrors facing each other indefinitely.
@@ -91,16 +95,16 @@ def test_no_recursion_error_at_depth_5(monkeypatch):
 
 
 def test_depth_guard_fires_before_surface_lookup(monkeypatch):
-    """At depth=0 the guard returns background before find_hit is ever called."""
+    """At depth=-1 the guard returns background before find_hit is ever called."""
     reset_scene()
     r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
 
     def exploding_find_hit(*args, **kwargs):
-        raise AssertionError("find_hit must not be called when depth == 0")
+        raise AssertionError("find_hit must not be called when depth < 0")
 
     monkeypatch.setattr(ray_module, 'find_hit', exploding_find_hit)
 
-    result = trace_ray(r, depth=0)
+    result = trace_ray(r, depth=-1)
     expected = Vector3.from_array(BACKGROUND)
     assert abs(result.x - expected.x) < 1e-9
     assert abs(result.y - expected.y) < 1e-9

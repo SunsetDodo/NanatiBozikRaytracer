@@ -39,7 +39,7 @@ def find_hit(ray, max_list_depth: int) -> List[RayHit]:
 
 
 def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
-    if depth <= 0:
+    if depth < 0:
         return Vector3.from_array(Scene().settings.background_color)
 
     hit_list = find_hit(ray, Scene().settings.root_number_shadow_rays ** 2)
@@ -64,7 +64,7 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
             sample_vector = sample - origin
             shadow_ray = Ray(origin, sample_vector)
 
-            if not is_occluded(shadow_ray, sample_vector.length):
+            if not is_occluded(shadow_ray, 1.0):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
