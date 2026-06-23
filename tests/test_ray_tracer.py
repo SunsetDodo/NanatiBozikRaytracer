@@ -4,6 +4,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
+import ray as ray_module
 from scene import Scene, SceneSingleton
 from scene_settings import SceneSettings
 from ray import Ray, trace_ray
@@ -64,13 +65,46 @@ def test_empty_scene_returns_background_at_any_depth():
         assert abs(result.x - expected.x) < 1e-9, f"failed at depth={depth}"
 
 
-def test_no_recursion_error_at_depth_5():
+def test_no_recursion_error_at_depth_5(monkeypatch):
+    """Depth guard prevents infinite recursion from mutually-facing mirror surfaces.
+
+    trace_ray is replaced with a version that unconditionally recurses through
+    ray_module.trace_ray on every call — creating real stack recursion that
+    the depth guard must stop.  Without the guard this would RecursionError.
+    """
     reset_scene(max_bounce_depth=5)
-    ray = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+
+    def mirror_trace(ray, depth=5):
+        if depth <= 0:
+            return Vector3.from_array(Scene().settings.background_color)
+        # Recurse through the module-level name so the monkeypatch keeps the
+        # loop alive — simulating two mirrors facing each other indefinitely.
+        return ray_module.trace_ray(ray, depth - 1)
+
+    monkeypatch.setattr(ray_module, 'trace_ray', mirror_trace)
+
     try:
-        trace_ray(ray, depth=5)
+        result = mirror_trace(r, depth=5)
     except RecursionError:
         pytest.fail("RecursionError raised despite depth guard")
+
+
+def test_depth_guard_fires_before_surface_lookup(monkeypatch):
+    """At depth=0 the guard returns background before find_hit is ever called."""
+    reset_scene()
+    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+
+    def exploding_find_hit(*args, **kwargs):
+        raise AssertionError("find_hit must not be called when depth == 0")
+
+    monkeypatch.setattr(ray_module, 'find_hit', exploding_find_hit)
+
+    result = trace_ray(r, depth=0)
+    expected = Vector3.from_array(BACKGROUND)
+    assert abs(result.x - expected.x) < 1e-9
+    assert abs(result.y - expected.y) < 1e-9
+    assert abs(result.z - expected.z) < 1e-9
 
 
 def test_max_bounce_depth_passed_to_trace_ray():

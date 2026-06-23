@@ -66,7 +66,7 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
             sample_vector = sample - origin
             shadow_ray = Ray(origin, sample_vector)
 
-            if not is_occluded(shadow_ray, 1.0):
+            if not is_occluded(shadow_ray, sample_vector.length):
                 reachable_samples += 1
 
         visibility = reachable_samples / total_samples
@@ -81,7 +81,7 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
         color += color_contrib
 
     if closest_hit.material.transparency > 0:
-        pass  # recursive call must use trace_ray(refracted_ray, depth - 1)
+        pass  # TODO: refraction — call trace_ray(refracted_ray, depth - 1) when implemented
 
     return color.clamp_01()
 
