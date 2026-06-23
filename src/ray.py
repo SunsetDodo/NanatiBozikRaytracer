@@ -39,7 +39,7 @@ def find_hit(ray, max_list_depth: int) -> List[RayHit]:
 
 
 def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
-    if depth <= 0:
+    if depth < 0:
         return Vector3.from_array(Scene().settings.background_color)
 
     hit_list = find_hit(ray, 10)
