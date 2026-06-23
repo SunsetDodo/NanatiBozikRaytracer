@@ -237,6 +237,44 @@ def test_no_recursion_error_with_refractive_surfaces():
         pytest.fail("RecursionError raised despite depth guard with always-hit transparent surface")
 
 
+@pytest.mark.parametrize("test_depth,expected_calls", [(0, 1), (1, 2), (2, 3), (3, 4)])
+def test_reflection_depth_controls_bounce_count(test_depth, expected_calls, monkeypatch):
+    """Each depth increment allows exactly one additional find_hit call via mirror bounce.
+
+    At depth=N, the primary ray plus N reflected rays each invoke find_hit once, for
+    a total of N+1 calls.  This verifies that depth-1 is passed correctly at every
+    reflective call site and that the depth guard fires at the right level.
+    """
+    from ray_hit import RayHit
+
+    s = reset_scene(max_bounce_depth=test_depth)
+    mat = Material([0, 0, 0], [0, 0, 0], [1, 1, 1], 1, 0)
+    s.materials.append(mat)
+
+    class AlwaysHitMirror:
+        def get_hit(self, ray):
+            hit_point = ray.at(1)
+            normal = (ray.direction * -1).normalized
+            return RayHit(self, hit_point, normal, 1, 1.0)
+
+    s.surfaces.append(AlwaysHitMirror())
+    s.lights = []
+
+    call_count = []
+    original_find_hit = ray_module.find_hit
+
+    def counting_find_hit(*args, **kwargs):
+        call_count.append(True)
+        return original_find_hit(*args, **kwargs)
+
+    monkeypatch.setattr(ray_module, 'find_hit', counting_find_hit)
+    trace_ray(Ray(Vector3(0, 0, 0), Vector3(0, 0, 1)), depth=test_depth)
+
+    assert len(call_count) == expected_calls, (
+        f"At depth={test_depth}, expected {expected_calls} find_hit calls, got {len(call_count)}"
+    )
+
+
 def test_non_reflective_material_never_recurses(monkeypatch):
     """trace_ray must not call itself for a pure diffuse (non-reflective, opaque) material."""
     from ray_hit import RayHit
