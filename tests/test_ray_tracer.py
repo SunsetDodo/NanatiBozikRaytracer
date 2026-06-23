@@ -65,33 +65,30 @@ def test_empty_scene_returns_background_at_any_depth():
         assert abs(result.x - expected.x) < 1e-9, f"failed at depth={depth}"
 
 
-def test_no_recursion_error_at_depth_5(monkeypatch):
-    """Simulation: depth guard prevents infinite recursion from mutually-facing mirrors.
+def test_no_recursion_error_with_reflective_surfaces():
+    """Two mutually-facing mirror surfaces: depth guard stops real trace_ray recursion."""
+    from ray_hit import RayHit
 
-    NOTE: This is a simulation test.  Because reflection call-sites in trace_ray
-    are currently `pass` stubs, trace_ray never actually recurses.  This test
-    replaces trace_ray with mirror_trace (which does recurse through the patched
-    module-level name) to exercise that a depth guard *can* stop runaway recursion.
-    The guard validated here belongs to mirror_trace, not to the production
-    trace_ray.  Restructure once the reflection branch is implemented so the real
-    trace_ray guard is exercised end-to-end.
-    """
-    reset_scene(max_bounce_depth=5)
-    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+    s = reset_scene(max_bounce_depth=5)
 
-    def mirror_trace(ray, depth=5):
-        if depth <= 0:
-            return Vector3.from_array(Scene().settings.background_color)
-        # Recurse through the module-level name so the monkeypatch keeps the
-        # loop alive — simulating two mirrors facing each other indefinitely.
-        return ray_module.trace_ray(ray, depth - 1)
+    # Fully reflective material at 1-based index 1
+    mat = Material([0, 0, 0], [0, 0, 0], [1, 1, 1], 1, 0)
+    s.materials.append(mat)
 
-    monkeypatch.setattr(ray_module, 'trace_ray', mirror_trace)
+    # A surface that always returns a hit at distance 1, normal opposing the ray.
+    # Any ray bounces back and forth indefinitely without the depth guard.
+    class AlwaysHitMirror:
+        def get_hit(self, ray):
+            hit_point = ray.at(1)
+            normal = (ray.direction * -1).normalized
+            return RayHit(self, hit_point, normal, 1, 1.0)
+
+    s.surfaces.append(AlwaysHitMirror())
 
     try:
-        result = mirror_trace(r, depth=5)
+        result = trace_ray(Ray(Vector3(0, 0, 0), Vector3(0, 0, 1)), depth=5)
     except RecursionError:
-        pytest.fail("RecursionError raised despite depth guard")
+        pytest.fail("RecursionError raised despite depth guard with two facing mirror surfaces")
 
 
 def test_depth_guard_fires_before_surface_lookup(monkeypatch):

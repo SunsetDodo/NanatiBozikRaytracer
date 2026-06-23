@@ -1,6 +1,6 @@
 from light import Light
 from ray_hit import RayHit
-from vector3 import Vector3
+from vector3 import Vector3, dot, vec3_convolution
 from surfaces.surface import Surface
 from scene import Scene
 
@@ -42,7 +42,7 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
     if depth <= 0:
         return Vector3.from_array(Scene().settings.background_color)
 
-    hit_list = find_hit(ray, Scene().settings.root_number_shadow_rays ** 2)
+    hit_list = find_hit(ray, 10)
     if not hit_list:
         return Vector3.from_array(Scene().settings.background_color)
 
@@ -79,10 +79,16 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
         color += color_contrib
 
     if closest_hit.material.reflection_color.length > 0:
-        pass  # TODO: reflection — trace_ray(reflected_ray, depth - 1)
+        d = ray.direction.normalized
+        n = closest_hit.normal
+        reflect_dir = d - n * (2 * dot(d, n))
+        reflected_ray = Ray(closest_hit.point + n * Scene.EPSILON, reflect_dir)
+        color += vec3_convolution(closest_hit.material.reflection_color, trace_ray(reflected_ray, depth - 1))
 
     if closest_hit.material.transparency > 0:
-        pass  # TODO: refraction — call trace_ray(refracted_ray, depth - 1) when implemented
+        transmit_ray = Ray(closest_hit.point - closest_hit.normal * Scene.EPSILON, ray.direction)
+        transmit_color = trace_ray(transmit_ray, depth - 1)
+        color = color * (1 - closest_hit.material.transparency) + transmit_color * closest_hit.material.transparency
 
     return color.clamp_01()
 
