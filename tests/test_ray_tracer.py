@@ -80,7 +80,7 @@ def test_no_recursion_error_at_depth_5(monkeypatch):
     r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
 
     def mirror_trace(ray, depth=5):
-        if depth < 0:
+        if depth <= 0:
             return Vector3.from_array(Scene().settings.background_color)
         # Recurse through the module-level name so the monkeypatch keeps the
         # loop alive — simulating two mirrors facing each other indefinitely.
@@ -95,20 +95,23 @@ def test_no_recursion_error_at_depth_5(monkeypatch):
 
 
 def test_depth_guard_fires_before_surface_lookup(monkeypatch):
-    """At depth=-1 the guard returns background before find_hit is ever called."""
-    reset_scene()
-    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+    """At depth<=0 the guard returns background before find_hit is ever called."""
+    for exhausted_depth in (0, -1):
+        reset_scene()
+        r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
 
-    def exploding_find_hit(*args, **kwargs):
-        raise AssertionError("find_hit must not be called when depth < 0")
+        def exploding_find_hit(*args, **kwargs):
+            raise AssertionError(
+                f"find_hit must not be called when depth <= 0 (got depth={exhausted_depth})"
+            )
 
-    monkeypatch.setattr(ray_module, 'find_hit', exploding_find_hit)
+        monkeypatch.setattr(ray_module, 'find_hit', exploding_find_hit)
 
-    result = trace_ray(r, depth=-1)
-    expected = Vector3.from_array(BACKGROUND)
-    assert abs(result.x - expected.x) < 1e-9
-    assert abs(result.y - expected.y) < 1e-9
-    assert abs(result.z - expected.z) < 1e-9
+        result = trace_ray(r, depth=exhausted_depth)
+        expected = Vector3.from_array(BACKGROUND)
+        assert abs(result.x - expected.x) < 1e-9, f"depth={exhausted_depth}"
+        assert abs(result.y - expected.y) < 1e-9, f"depth={exhausted_depth}"
+        assert abs(result.z - expected.z) < 1e-9, f"depth={exhausted_depth}"
 
 
 def test_max_bounce_depth_passed_to_trace_ray():
@@ -118,3 +121,44 @@ def test_max_bounce_depth_passed_to_trace_ray():
     ray = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
     result = trace_ray(ray, depth=s.settings.max_bounce_depth)
     assert result is not None
+
+
+def test_depth_zero_returns_background_even_with_surface_hit(monkeypatch):
+    """depth=0 must short-circuit to background *before* shading any hit surface.
+
+    The guard must fire before find_hit, not after — otherwise a depth=0 call
+    would still shade the surface (wrong) even though zero bounces remain.
+    This test simulates a scene where find_hit would return a valid hit; if the
+    guard is placed incorrectly (or uses depth < 0 instead of depth <= 0) the
+    test catches it because find_hit raising would surface the bug.
+    """
+    reset_scene(max_bounce_depth=0)
+    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+
+    def would_hit(*args, **kwargs):
+        raise AssertionError("find_hit must not be reached at depth=0")
+
+    monkeypatch.setattr(ray_module, 'find_hit', would_hit)
+
+    result = trace_ray(r, depth=0)
+    expected = Vector3.from_array(BACKGROUND)
+    assert abs(result.x - expected.x) < 1e-9
+    assert abs(result.y - expected.y) < 1e-9
+    assert abs(result.z - expected.z) < 1e-9
+
+
+def test_positive_depth_does_call_find_hit(monkeypatch):
+    """Sanity check: at depth=1 the guard does NOT fire and find_hit is called."""
+    reset_scene(max_bounce_depth=1)
+    r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
+    find_hit_called = []
+
+    original_find_hit = ray_module.find_hit
+
+    def tracking_find_hit(*args, **kwargs):
+        find_hit_called.append(True)
+        return original_find_hit(*args, **kwargs)
+
+    monkeypatch.setattr(ray_module, 'find_hit', tracking_find_hit)
+    trace_ray(r, depth=1)
+    assert find_hit_called, "find_hit must be called when depth > 0"
