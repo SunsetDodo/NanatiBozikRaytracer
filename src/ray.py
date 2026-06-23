@@ -1,5 +1,3 @@
-from packaging.version import VersionComparisonMethod
-
 from light import Light
 from ray_hit import RayHit
 from vector3 import Vector3
@@ -79,6 +77,9 @@ def trace_ray(ray: Ray, depth: int = 5) -> Vector3:
             light_dir=light_dir
         ) * shadow
         color += color_contrib
+
+    if closest_hit.material.reflection_color.length > 0:
+        pass  # TODO: reflection — trace_ray(reflected_ray, depth - 1)
 
     if closest_hit.material.transparency > 0:
         pass  # TODO: refraction — call trace_ray(refracted_ray, depth - 1) when implemented
