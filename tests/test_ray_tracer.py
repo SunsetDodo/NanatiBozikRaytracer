@@ -202,3 +202,67 @@ def test_pool_scene_does_not_crash_at_various_depths(depth):
     assert isinstance(result.x, float), f"depth={depth}: x must be float"
     assert isinstance(result.y, float), f"depth={depth}: y must be float"
     assert isinstance(result.z, float), f"depth={depth}: z must be float"
+
+
+def test_pool_scene_parses_max_bounce_depth():
+    """pool.txt specifies max_bounce_depth=10; verify it is parsed into SceneSettings."""
+    import os
+    from ray_tracer import parse_scene_file
+
+    SceneSingleton.instance = None
+    scene_file = os.path.join(os.path.dirname(__file__), '..', 'src', 'scenes', 'pool.txt')
+    _, scene_settings, _ = parse_scene_file(scene_file)
+    assert scene_settings.max_bounce_depth == 10
+
+
+def test_no_recursion_error_with_refractive_surfaces():
+    """Transparent always-hit surface: depth guard stops refraction recursion."""
+    from ray_hit import RayHit
+
+    s = reset_scene(max_bounce_depth=5)
+    mat = Material([0, 0, 0], [0, 0, 0], [0, 0, 0], 1, 1.0)  # fully transparent, no reflection
+    s.materials.append(mat)
+
+    class AlwaysHitTransparent:
+        def get_hit(self, ray):
+            hit_point = ray.at(1)
+            normal = (ray.direction * -1).normalized
+            return RayHit(self, hit_point, normal, 1, 1.0)
+
+    s.surfaces.append(AlwaysHitTransparent())
+
+    try:
+        trace_ray(Ray(Vector3(0, 0, 0), Vector3(0, 0, 1)), depth=5)
+    except RecursionError:
+        pytest.fail("RecursionError raised despite depth guard with always-hit transparent surface")
+
+
+def test_non_reflective_material_never_recurses(monkeypatch):
+    """trace_ray must not call itself for a pure diffuse (non-reflective, opaque) material."""
+    from ray_hit import RayHit
+
+    s = reset_scene()
+    mat = Material([0.8, 0.2, 0.1], [0.1, 0.1, 0.1], [0, 0, 0], 30, 0)  # reflection=(0,0,0), transparency=0
+    s.materials.append(mat)
+    s.lights = []
+
+    class FixedHit:
+        def get_hit(self, ray):
+            return RayHit(self, ray.at(1), Vector3(0, 0, -1), 1, 1.0)
+
+    s.surfaces.append(FixedHit())
+
+    call_count = [0]
+    original_trace_ray = ray_module.trace_ray
+
+    def counting_trace_ray(*args, **kwargs):
+        call_count[0] += 1
+        return original_trace_ray(*args, **kwargs)
+
+    monkeypatch.setattr(ray_module, 'trace_ray', counting_trace_ray)
+
+    counting_trace_ray(Ray(Vector3(0, 0, 0), Vector3(0, 0, 1)), depth=5)
+
+    assert call_count[0] == 1, (
+        f"trace_ray called {call_count[0]} times for a pure diffuse material; expected 1 (no recursion)"
+    )
