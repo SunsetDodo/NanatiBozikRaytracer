@@ -1,10 +1,10 @@
 from math import sqrt
 from typing import Optional
 
-from src.consts import EPSILON
-from src.ray import Ray
-from src.ray_hit import RayHit
-from src.vector3 import Vector3
+from consts import EPSILON
+from ray import Ray
+from ray_hit import RayHit
+from vector3 import Vector3
 from .surface import Surface
 import numpy as np  # Make sure numpy is imported
 

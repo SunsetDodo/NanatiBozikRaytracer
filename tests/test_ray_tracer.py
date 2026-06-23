@@ -37,7 +37,22 @@ def test_scene_settings_default_max_bounce_depth():
 
 
 def test_depth_zero_returns_background_color():
-    reset_scene(max_bounce_depth=0)
+    from ray_hit import RayHit
+
+    s = reset_scene(max_bounce_depth=0)
+
+    mat = Material([0, 0, 0], [0, 0, 0], [1, 1, 1], 1, 0)
+    s.materials.append(mat)
+    s.lights = []
+
+    class AlwaysHitMirror:
+        def get_hit(self, ray):
+            hit_point = ray.at(1)
+            normal = (ray.direction * -1).normalized
+            return RayHit(self, hit_point, normal, 1, 1.0)
+
+    s.surfaces.append(AlwaysHitMirror())
+
     ray = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
     result = trace_ray(ray, depth=0)
     expected = Vector3.from_array(BACKGROUND)
@@ -118,12 +133,10 @@ def test_max_bounce_depth_passed_to_trace_ray():
 
 
 def test_depth_zero_returns_background_even_with_surface_hit(monkeypatch):
-    """depth=0 calls find_hit for the primary ray but suppresses all recursive trace calls.
+    """depth=0 returns background immediately — the guard fires before find_hit is called.
 
-    With depth<0 as the guard, depth=0 means 'shade the primary hit but make all
-    reflection/refraction sub-calls immediately return background (via depth-1=-1 guard)'.
-    find_hit is therefore called exactly once — for the primary ray — and never again
-    for any reflected or refracted rays.
+    With depth<=0 as the guard, depth=0 means 'zero bounces remaining' and the function
+    returns background without performing any intersection test.
     """
     from ray_hit import RayHit
 
@@ -151,13 +164,16 @@ def test_depth_zero_returns_background_even_with_surface_hit(monkeypatch):
     monkeypatch.setattr(ray_module, 'find_hit', counting_find_hit)
 
     r = Ray(Vector3(0, 0, 0), Vector3(0, 0, 1))
-    trace_ray(r, depth=0)
+    result = trace_ray(r, depth=0)
 
-    assert find_hit_call_count, "find_hit must be called at depth=0 for the primary ray"
-    assert len(find_hit_call_count) == 1, (
-        f"find_hit must be called exactly once at depth=0 (primary ray only), "
-        f"but was called {len(find_hit_call_count)} times"
+    assert not find_hit_call_count, (
+        f"find_hit must NOT be called at depth=0 (guard fires before intersection), "
+        f"but was called {len(find_hit_call_count)} time(s)"
     )
+    expected = Vector3.from_array(BACKGROUND)
+    assert abs(result.x - expected.x) < 1e-9
+    assert abs(result.y - expected.y) < 1e-9
+    assert abs(result.z - expected.z) < 1e-9
 
 
 def test_positive_depth_does_call_find_hit(monkeypatch):
@@ -237,13 +253,13 @@ def test_no_recursion_error_with_refractive_surfaces():
         pytest.fail("RecursionError raised despite depth guard with always-hit transparent surface")
 
 
-@pytest.mark.parametrize("test_depth,expected_calls", [(0, 1), (1, 2), (2, 3), (3, 4)])
+@pytest.mark.parametrize("test_depth,expected_calls", [(0, 0), (1, 1), (2, 2), (3, 3)])
 def test_reflection_depth_controls_bounce_count(test_depth, expected_calls, monkeypatch):
     """Each depth increment allows exactly one additional find_hit call via mirror bounce.
 
-    At depth=N, the primary ray plus N reflected rays each invoke find_hit once, for
-    a total of N+1 calls.  This verifies that depth-1 is passed correctly at every
-    reflective call site and that the depth guard fires at the right level.
+    With depth<=0 as the guard, depth=N means N bounces are allowed.  At depth=0 the guard
+    fires immediately and find_hit is never called.  At depth=N>0 there are exactly N calls:
+    one for the primary ray plus N-1 for successive reflections until depth reaches 0.
     """
     from ray_hit import RayHit
 
