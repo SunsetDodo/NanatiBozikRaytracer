@@ -54,7 +54,7 @@ def parse_scene_file(file_path):
                 camera = Camera(params[:3], params[3:6], params[6:9], params[9], params[10])
                 s.camera = camera
             elif obj_type == "set":
-                scene_settings = SceneSettings(params[:3], params[3], params[4])
+                scene_settings = SceneSettings(params[:3], params[3], params[4] if len(params) > 4 else 5)
                 s.settings = scene_settings
             elif obj_type == "mtl":
                 material = Material(params[:3], params[3:6], params[6:9], params[9], params[10])
@@ -112,7 +112,7 @@ def main():
         for y in range(args.height):
             target = vp.get_pixel_center(x, y)
             r = Ray(origin, target - origin)
-            color = trace_ray(r, scene_settings.max_recursions).clamp_01().to_tuple()
+            color = trace_ray(r, scene_settings.max_bounce_depth).clamp_01().to_tuple()
             image_array[y][x] = color
 
     save_image(image_array, args.output_image)
